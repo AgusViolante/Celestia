@@ -1,0 +1,35 @@
+{
+	"version": 1,
+	"changelists": [
+		{
+			"guid": "00000000000000000000000000000000",
+			"description": "Default Uncontrolled Changelist",
+			"files": [
+				"C:/Users/violanteagus/Desktop/Githubs/Celestia/Celestia/Content/ThirdPerson/Blueprints/BP_ThirdPersonGameMode.uasset",
+				"C:/Users/violanteagus/Desktop/Githubs/Celestia/Celestia/Content/ThirdPerson/Blueprints/BP_Player.uasset",
+				"C:/Users/violanteagus/Desktop/Githubs/Celestia/Celestia/Content/Fab/Medieval_Axe/medieval_axe/StaticMeshes/medieval_axe.uasset",
+				"C:/Users/violanteagus/Desktop/Githubs/Celestia/Celestia/Content/Celestia/Blueprints/Items/BP_Items.uasset",
+				"C:/Users/violanteagus/Desktop/Githubs/Celestia/Celestia/Content/Celestia/Blueprints/Items/BP_AxeItem.uasset",
+				"C:/Users/violanteagus/Desktop/Githubs/Celestia/Celestia/Content/Celestia/Structure/S_ItemInfo.uasset",
+				"C:/Users/violanteagus/Desktop/Githubs/Celestia/Celestia/Content/Celestia/Structure/DT_ItemInfo.uasset",
+				"C:/Users/violanteagus/Desktop/Githubs/Celestia/Celestia/Content/Characters/Mannequins/Rigs/CR_Mannequin_FootIK.uasset",
+				"C:/Users/violanteagus/Desktop/Githubs/Celestia/Celestia/Content/Fab/Medieval_Axe/medieval_axe/Materials/material.uasset",
+				"C:/Users/violanteagus/Desktop/Githubs/Celestia/Celestia/Content/__ExternalActors__/ThirdPerson/Lvl_ThirdPerson/A/CJ/4GR7AY7RMJHV4NQHWMIDQD.uasset",
+				"C:/Users/violanteagus/Desktop/Githubs/Celestia/Celestia/Content/Fab/Medieval_Axe/medieval_axe/Textures/medieval_axe_texture_0.uasset",
+				"C:/Users/violanteagus/Desktop/Githubs/Celestia/Celestia/Content/Fab/Medieval_Axe/medieval_axe/Textures/medieval_axe_texture_1.uasset",
+				"C:/Users/violanteagus/Desktop/Githubs/Celestia/Celestia/Content/Fab/Medieval_Axe/medieval_axe/Textures/medieval_axe_texture_2.uasset",
+				"C:/Users/violanteagus/Desktop/Githubs/Celestia/Celestia/Content/Celestia/Structure/DT_Items.uasset",
+				"C:/Users/violanteagus/Desktop/Githubs/Celestia/Celestia/Content/Celestia/Blueprints/Items/BP_InteractableItem.uasset",
+				"C:/Users/violanteagus/Desktop/Githubs/Celestia/Celestia/Content/Celestia/Structure/E_ItemNames.uasset",
+				"C:/Users/violanteagus/Desktop/Githubs/Celestia/Celestia/Content/Celestia/Interface/BPI_Interact.uasset",
+				"C:/Users/violanteagus/Desktop/Githubs/Celestia/Celestia/Content/Celestia/Widgets/WBP_Inventory.uasset",
+				"C:/Users/violanteagus/Desktop/Githubs/Celestia/Celestia/Content/Input/Actions/IA_TakeItem.uasset",
+				"C:/Users/violanteagus/Desktop/Githubs/Celestia/Celestia/Content/Input/IMC_Default.uasset",
+				"C:/Users/violanteagus/Desktop/Githubs/Celestia/Celestia/Content/Input/Actions/IA_Inventory.uasset",
+				"C:/Users/violanteagus/Desktop/Githubs/Celestia/Celestia/Content/Celestia/Widgets/WBP_InventoryIcon.uasset",
+				"C:/Users/violanteagus/Desktop/Githubs/Celestia/Celestia/Content/__ExternalActors__/ThirdPerson/Lvl_ThirdPerson/0/NC/BO3U0EQ15BOJ876WQ97DI9.uasset",
+				"C:/Users/violanteagus/Desktop/Githubs/Celestia/Celestia/Content/ThirdPerson/Blueprints/BP_ThirdPersonCharacter.uasset"
+			]
+		}
+	]
+}
