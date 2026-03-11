@@ -2578,3 +2578,9 @@ LogConfig: Set CVar [[r.VRS.ContrastAdaptiveShading:1]]
 [2026.03.11-00.04.42:209][ 35]AssetCheck: /Game/Celestia/Structure/DT_Items Validating asset
 [2026.03.11-00.04.42:209][ 35]AssetCheck: /Game/Celestia/Widgets/WBP_Inventory Validating asset
 [2026.03.11-00.04.42:257][ 35]LogSourceControl: Display: Uncontrolled Changelist persistency file saved ../../../../../../Users/violanteagus/Desktop/Githubs/Celestia/Celestia/Saved/SourceControl/UncontrolledChangelists.json
+[2026.03.11-00.07.38:342][623]LogEOSSDK: LogEOS: Updating Product SDK Config, Time: 11811.311523
+[2026.03.11-00.07.39:341][626]LogEOSSDK: LogEOS: SDK Config Product Update Request Completed - No Change
+[2026.03.11-00.07.39:341][626]LogEOSSDK: LogEOS: ScheduleNextSDKConfigDataUpdate - Time: 11811.978516, Update Interval: 304.923859
+[2026.03.11-00.13.34:022][690]LogEOSSDK: LogEOS: Updating Product SDK Config, Time: 12166.938477
+[2026.03.11-00.13.35:355][694]LogEOSSDK: LogEOS: SDK Config Product Update Request Completed - No Change
+[2026.03.11-00.13.35:355][694]LogEOSSDK: LogEOS: ScheduleNextSDKConfigDataUpdate - Time: 12167.937500, Update Interval: 303.797729
