@@ -54,9 +54,6 @@ protected:
 	UInputAction* MouseLookAction;
 
 	UPROPERTY(EditAnywhere, Category="Input")
-	UInputAction* Using;
-
-	UPROPERTY(EditAnywhere, Category="Input")
 	UInputAction* Sprint;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Input")
@@ -88,12 +85,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventary") int Coins = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventary") int Potion = 0;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int CuraCharacter = 5.0f;
-
-	UFUNCTION()
-	void Debug_HealInput();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
 	int32 PotionCount = 0;

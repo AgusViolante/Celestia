@@ -191,14 +191,6 @@ void ACelestiaCharacter::DoJumpEnd()
 	StopJumping();
 }
 
-void ACelestiaCharacter::Debug_HealInput()
-{
-	if (HealthComponent)
-	{
-		HealthComponent->Heal(25.f);
-
-	}
-}
 void ACelestiaCharacter::AddPotion(int32 Amount)
 {
 	PotionCount += Amount;

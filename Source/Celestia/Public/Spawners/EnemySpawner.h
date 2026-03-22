@@ -51,7 +51,8 @@ protected:
     UFUNCTION()
     void OnSpawnedEnemyDeath(AActor* DeadOwner);
 
-    TMap<int32, TWeakObjectPtr<AEnemyCharacter>> ActiveSpawnedMap;
+    UPROPERTY()
+    TMap<AEnemyCharacter*, int32> EnemyToSpawnIndexMap;
 
 public:
     UFUNCTION(BlueprintCallable, Category = "Spawner")

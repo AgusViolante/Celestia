@@ -98,29 +98,22 @@ void AEnemySpawner::SpawnEnemyAtIndex(int32 SpawnIndex)
     }
 
 
-    ActiveSpawnedMap.Add(SpawnIndex, NewEnemy);
+    EnemyToSpawnIndexMap.Add(NewEnemy, SpawnIndex);
 }
 
 void AEnemySpawner::OnSpawnedEnemyDeath(AActor* DeadOwner)
 {
-    if (!DeadOwner) return;
+    AEnemyCharacter* DeadEnemy = Cast<AEnemyCharacter>(DeadOwner);
+    if (!DeadEnemy) return;
 
-    int32 FoundIndex = INDEX_NONE;
-    for (const TPair<int32, TWeakObjectPtr<AEnemyCharacter>>& Pair : ActiveSpawnedMap)
-    {
-        if (Pair.Value.IsValid() && Pair.Value.Get() == Cast<AEnemyCharacter>(DeadOwner))
-        {
-            FoundIndex = Pair.Key;
-            break;
-        }
-    }
-
-    if (FoundIndex == INDEX_NONE)
+    int32* FoundIndexPtr = EnemyToSpawnIndexMap.Find(DeadEnemy);
+    if (!FoundIndexPtr)
     {
         return;
     }
 
-    ActiveSpawnedMap.Remove(FoundIndex);
+    int32 FoundIndex = *FoundIndexPtr;
+    EnemyToSpawnIndexMap.Remove(DeadEnemy);
 
     if (UWorld* W = GetWorld())
     {
@@ -136,9 +129,11 @@ void AEnemySpawner::OnSpawnedEnemyDeath(AActor* DeadOwner)
     }
 }
 
+
 void AEnemySpawner::DoRespawnByIndex(int32 SpawnIndex)
 {
     if (!SpawnPoints.IsValidIndex(SpawnIndex)) return;
 
     SpawnEnemyAtIndex(SpawnIndex);
 }
+

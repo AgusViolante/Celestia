@@ -53,6 +53,9 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat|Animation")
     UAnimMontage* Death_A_Montage;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat|Animation")
+    UAnimMontage* AttackMontage;
+
 
     virtual void Die_Implementation() override;
 
@@ -112,8 +115,5 @@ private:
 
     FTimerHandle DamageTimerHandle;
 
-public:
-    virtual void Tick(float DeltaTime) override;
-    virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 };
