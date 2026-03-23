@@ -17,12 +17,15 @@
 #include "TimerManager.h"
 #include "InputActionValue.h"
 #include "Celestia.h"
+#include "UI/UIPlayerHUD.h"
+#include "Components/StaminaComponent.h"
 
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 ACelestiaCharacter::ACelestiaCharacter()
 {
+	PrimaryActorTick.bCanEverTick = true;
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 		
@@ -66,6 +69,8 @@ ACelestiaCharacter::ACelestiaCharacter()
 	DashComponent->DashStrength = 2000.f;
 	DashComponent->DashCooldown = 1.0f;
 	DashComponent->bUseTeleportDash = false;
+
+	StaminaComponent = CreateDefaultSubobject<UStaminaComponent>(TEXT("StaminaComponent"));
 }
 
 void ACelestiaCharacter::BeginPlay()
@@ -88,6 +93,39 @@ void ACelestiaCharacter::BeginPlay()
 		}
 	}
 
+	if (IsLocallyControlled() && PlayerHUDClass)
+	{
+		PlayerHUDInstance = CreateWidget<UUIPlayerHUD>(GetWorld(), PlayerHUDClass);
+		if (PlayerHUDInstance)
+		{
+			PlayerHUDInstance->AddToViewport();
+
+			// Conectar el evento de vida
+			if (HealthComponent)
+			{
+				HealthComponent->OnHealthChanged.AddDynamic(PlayerHUDInstance, &UUIPlayerHUD::UpdateHealth);
+
+				// Forzar la primera actualización visual
+				PlayerHUDInstance->UpdateHealth(HealthComponent, HealthComponent->Health, HealthComponent->MaxHealth, 0.f);
+			}
+			if (StaminaComponent)
+			{
+				StaminaComponent->OnStaminaChanged.AddDynamic(PlayerHUDInstance, &UUIPlayerHUD::UpdateStamina);
+				PlayerHUDInstance->UpdateStamina(StaminaComponent, StaminaComponent->CurrentStamina, StaminaComponent->MaxStamina);
+			}
+		
+		}
+	}
+
+	if (HealthComponent)
+	{
+		HealthComponent->OnDeath.AddDynamic(this, &ACelestiaCharacter::OnDeath);
+	}
+
+	if (StaminaComponent)
+	{
+		StaminaComponent->OnStaminaExhausted.AddDynamic(this, &ACelestiaCharacter::OnStaminaExhausted);
+	}
 }
 void ACelestiaCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -195,11 +233,14 @@ void ACelestiaCharacter::AddPotion(int32 Amount)
 {
 	PotionCount += Amount;
 
+
 	if (GEngine)
 	{
 		const FString Msg = FString::Printf(TEXT("Pociones: %d"), PotionCount);
 		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, Msg);
 	}
+
+	
 }
 
 bool ACelestiaCharacter::TryUsePotion(int32 NumPotions)
@@ -239,6 +280,8 @@ bool ACelestiaCharacter::TryUsePotion(int32 NumPotions)
 
 	PotionCount -= Use;
 
+
+
 	const float AfterHP = HealthComponent->Health;
 
 
@@ -274,14 +317,123 @@ void ACelestiaCharacter::Debug_UsePotionInput()
 }
 void ACelestiaCharacter::Sprinting()
 {
-	GetCharacterMovement()->MaxWalkSpeed = 1000.f;
+	// Solo corremos si hay estamina disponible
+	if (StaminaComponent && StaminaComponent->HasEnoughStamina())
+	{
+		GetCharacterMovement()->MaxWalkSpeed = 1000.f;
+		StaminaComponent->StartDraining(StaminaComponent->SprintCostPerSecond);
+	}
 }
 
 void ACelestiaCharacter::StopSprinting()
 {
 	GetCharacterMovement()->MaxWalkSpeed = 500.f;
+
+	if (StaminaComponent)
+	{
+		StaminaComponent->StopDraining();
+	}
 }
 
+void ACelestiaCharacter::OnStaminaExhausted()
+{
+	// Si la estamina llega a 0, forzamos mecánicamente el fin del sprint
+	StopSprinting();
+}
+
+void ACelestiaCharacter::OnDeath(AActor* DeadOwner)
+{
+
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		DisableInput(PC);
+	}
+
+
+	if (GetCharacterMovement())
+	{
+		GetCharacterMovement()->DisableMovement();
+		GetCharacterMovement()->StopMovementImmediately();
+	}
+
+
+	if (UCapsuleComponent* Capsule = GetCapsuleComponent())
+	{
+		Capsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Capsule->SetCollisionResponseToAllChannels(ECR_Ignore);
+	}
+
+
+	if (GetMesh())
+	{
+		TArray<USkeletalMeshComponent*> SkeletalMeshes;
+		GetComponents<USkeletalMeshComponent>(SkeletalMeshes);
+
+		
+		for (USkeletalMeshComponent* SkelMesh : SkeletalMeshes)
+		{
+			if (SkelMesh)
+			{
+				SkelMesh->SetCollisionProfileName(TEXT("Ragdoll"));
+				SkelMesh->SetSimulatePhysics(true);
+				SkelMesh->WakeAllRigidBodies();
+				SkelMesh->bBlendPhysics = true;
+			}
+		}
+	}
+
+}
+	
+void ACelestiaCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	// Si estamos cayendo/en el aire, registramos constantemente el punto más alto que alcanzamos
+	if (GetCharacterMovement()->IsFalling())
+	{
+		MaxZHeightDuringFall = FMath::Max(MaxZHeightDuringFall, GetActorLocation().Z);
+	}
+	else
+	{
+		// Si estamos pisando suelo firme, anclamos el registro a nuestra altura actual
+		MaxZHeightDuringFall = GetActorLocation().Z;
+	}
+}
+
+void ACelestiaCharacter::Landed(const FHitResult& Hit)
+{
+	Super::Landed(Hit);
+
+	// Calculamos cuántas unidades caímos desde nuestro punto más alto en el aire
+	float FallDistance = MaxZHeightDuringFall - GetActorLocation().Z;
+
+	// Si la caída fue mayor a la distancia mínima configurada, aplicamos daño
+	if (FallDistance >= MinFallDistance)
+	{
+		if (HealthComponent)
+		{
+			// FMath::GetMappedRangeValueClamped es perfecto para esto:
+			// Convierte proporcionalmente el rango de Distancia en un rango de Daño.
+			// Si caíste MaxFallDistance (3000), el daño será MaxFallDamage (100), activando tu lógica de muerte y ragdoll.
+			float FallDamage = FMath::GetMappedRangeValueClamped(
+				FVector2D(MinFallDistance, MaxFallDistance),
+				FVector2D(MinFallDamage, MaxFallDamage),
+				FallDistance
+			);
+
+			HealthComponent->TakeDamage(FallDamage);
+
+			if (GEngine)
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 4.f, FColor::Orange,
+					FString::Printf(TEXT("Caida de %.1f metros! Danio: %.1f"), FallDistance / 100.f, FallDamage));
+			}
+		}
+	}
+
+	// Reseteamos el punto más alto tras tocar el suelo para evitar errores en el próximo salto
+	MaxZHeightDuringFall = GetActorLocation().Z;
+}
 
 
 

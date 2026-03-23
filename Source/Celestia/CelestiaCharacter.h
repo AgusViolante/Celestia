@@ -16,6 +16,8 @@ class UHealthComponent;
 class UDashComponent;
 struct FInputActionValue;
 struct FInputActionInstance;
+class UUIPlayerHUD;
+class UStaminaComponent;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
@@ -67,6 +69,8 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Dash")
 	UDashComponent* DashComponent;
+
+
 public:
 
 	/** Constructor */
@@ -104,10 +108,47 @@ public:
 	UFUNCTION()
 	void Debug_UsePotionInput();
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI")
+	TSubclassOf<UUIPlayerHUD> PlayerHUDClass;
+
+	UPROPERTY()
+	UUIPlayerHUD* PlayerHUDInstance;
+
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Components")
+	UStaminaComponent* StaminaComponent;
+
 protected:
 	virtual void BeginPlay() override;
 	/** Initialize input action bindings */
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+
+	UFUNCTION()
+	virtual void OnDeath(AActor* DeadOwner);
+
+	// --- DAÑO DE CAÍDA ---
+	// Variable oculta para llevar el registro
+	UPROPERTY()
+	float MaxZHeightDuringFall = 0.f;
+
+	// Distancia mínima en el aire para empezar a sufrir daño (1000 unidades = 10 metros)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Fall Damage")
+	float MinFallDistance = 1000.f;
+
+	// Distancia que causa el daño máximo / muerte instantánea
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Fall Damage")
+	float MaxFallDistance = 2000.f;
+
+	// Daño que recibís si caés justo la distancia mínima
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Fall Damage")
+	float MinFallDamage = 10.f;
+
+	// Daño que recibís si caés la distancia máxima (100 para matar a un PJ con 100 de vida)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Fall Damage")
+	float MaxFallDamage = 100.f;
+
+	UFUNCTION()
+	void OnStaminaExhausted();
 
 protected:
 
@@ -140,6 +181,10 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category="Input")
 	virtual void StopSprinting();
+
+	virtual void Tick(float DeltaTime) override;
+
+	virtual void Landed(const FHitResult& Hit) override;
 
 
 

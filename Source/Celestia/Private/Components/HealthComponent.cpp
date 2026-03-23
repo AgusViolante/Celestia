@@ -55,6 +55,8 @@ void UHealthComponent::TakeDamage(float Amount)
 
     Health = FMath::Clamp(Health - Amount, 0.f, MaxHealth);
 
+    OnHealthChanged.Broadcast(this, Health, MaxHealth, -Amount);
+
     if (GetWorld())
     {
         LastDamageTime = GetWorld()->GetTimeSeconds();
@@ -89,6 +91,8 @@ void UHealthComponent::Heal(float Amount)
 
     const float Old = Health;
     Health = FMath::Clamp(Health + Amount, 0.f, MaxHealth);
+
+    OnHealthChanged.Broadcast(this, Health, MaxHealth, Amount);
 
     FString Tipo = GetOwnerTypeLabel();
 

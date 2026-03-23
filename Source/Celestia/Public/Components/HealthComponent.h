@@ -8,6 +8,8 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDeathSignature, AActor*, DeadOwner);
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FOnHealthChangedSignature, UHealthComponent*, HealthComp, float, Health, float, MaxHealth, float, HealthDelta);
+
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class CELESTIA_API UHealthComponent : public UActorComponent
 {
@@ -36,6 +38,9 @@ public:
 
     UPROPERTY(BlueprintAssignable, Category="Health")
     FOnDeathSignature OnDeath;
+
+    UPROPERTY(BlueprintAssignable, Category = "Health")
+    FOnHealthChangedSignature OnHealthChanged;
 
     UFUNCTION(BlueprintCallable, Category="Health")
     void TakeDamage(float Amount);
