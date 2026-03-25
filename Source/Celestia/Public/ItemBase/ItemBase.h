@@ -3,42 +3,35 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/BoxComponent.h"
 #include "GameFramework/Actor.h"
+#include "Interfaces/I_PickUp.h" 
 #include "ItemBase.generated.h"
 
 class UBoxComponent;
 class UStaticMeshComponent;
 
 UCLASS()
-class CELESTIA_API AItemBase : public AActor
+class CELESTIA_API AItemBase : public AActor, public II_PickUp
 {
 	GENERATED_BODY()
-	
-public:	
-	// Sets default values for this actor's properties
+
+public:
 	AItemBase();
 
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item Data")
+	int32 Amount = 1;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemBase")
-	int32 Amount = 0;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item Data")
+	FString ItemName = "BaseItem";
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemBase")
-	FString ItemName = "";
-
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-	virtual void NotifyActorBeginOverlap(AActor* OtherActor) override;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemBase")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UBoxComponent> BoxCollision;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ItemBase")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UStaticMeshComponent> CubeMesh;
-	
+
+public:
+	// Implementación de la orden de interactuar que manda el jugador
+	virtual void Interact_Implementation(AActor* Interactor) override;
 };

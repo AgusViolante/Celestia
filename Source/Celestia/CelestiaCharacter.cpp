@@ -19,6 +19,7 @@
 #include "Celestia.h"
 #include "UI/UIPlayerHUD.h"
 #include "Components/StaminaComponent.h"
+#include "Components/ProgressionComponent.h"
 
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -71,6 +72,9 @@ ACelestiaCharacter::ACelestiaCharacter()
 	DashComponent->bUseTeleportDash = false;
 
 	StaminaComponent = CreateDefaultSubobject<UStaminaComponent>(TEXT("StaminaComponent"));
+
+	ProgressionComponent = CreateDefaultSubobject<UProgressionComponent>(TEXT("Progression Component"));
+
 }
 
 void ACelestiaCharacter::BeginPlay()
@@ -143,11 +147,13 @@ void ACelestiaCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ACelestiaCharacter::Look);
 
-		//Using
 
 		//Sprint
 		EnhancedInputComponent->BindAction(Sprint, ETriggerEvent::Started, this, &ACelestiaCharacter::Sprinting);
 		EnhancedInputComponent->BindAction(Sprint, ETriggerEvent::Completed, this, &ACelestiaCharacter::StopSprinting);
+
+		//Interact
+		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &ACelestiaCharacter::OnInteractInput);
 
 		if (IA_Heal)
 		{
@@ -167,6 +173,8 @@ void ACelestiaCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 	{
 		UE_LOG(LogTemplateCharacter, Error, TEXT("'%s' Failed to find an Enhanced Input component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
 	}
+
+
 }
 
 void ACelestiaCharacter::Move(const FInputActionValue& Value)
@@ -229,9 +237,36 @@ void ACelestiaCharacter::DoJumpEnd()
 	StopJumping();
 }
 
-void ACelestiaCharacter::AddPotion(int32 Amount)
+void ACelestiaCharacter::OnInteractInput()
 {
-	PotionCount += Amount;
+	TArray<AActor*> OverlappingActors;
+	GetCapsuleComponent()->GetOverlappingActors(OverlappingActors);
+
+	for (AActor* Actor : OverlappingActors)
+	{
+		if (Actor && Actor->GetClass()->ImplementsInterface(UI_PickUp::StaticClass()))
+		{
+			
+			II_PickUp::Execute_Interact(Actor, this);
+
+			
+			break;
+		}
+	}
+}
+
+void ACelestiaCharacter::ReceiveItem_Implementation(int32 Amount, const FString& ItemName)
+{
+	
+	if (ItemName == "PocionVida")
+	{
+		AddPotion(Amount);
+	}
+}
+
+void ACelestiaCharacter::AddPotion(int32 AmountToAdd)
+{
+	PotionCount += AmountToAdd;
 
 
 	if (GEngine)

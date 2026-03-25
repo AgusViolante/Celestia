@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
+#include "Interfaces/I_PickUp.h"
 
 
 
@@ -18,6 +19,7 @@ struct FInputActionValue;
 struct FInputActionInstance;
 class UUIPlayerHUD;
 class UStaminaComponent;
+class UProgressionComponent;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
@@ -25,7 +27,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
 
 UCLASS(abstract)
-class CELESTIA_API ACelestiaCharacter : public ACharacter
+class CELESTIA_API ACelestiaCharacter : public ACharacter, public II_PickUp
 {
 	GENERATED_BODY()
 
@@ -64,11 +66,17 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Input")
 	UInputAction* IA_Heal;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction* InteractAction;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Input")
 	UInputMappingContext* IMC_Default;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Dash")
 	UDashComponent* DashComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UProgressionComponent> ProgressionComponent;
 
 
 public:
@@ -85,16 +93,11 @@ public:
 
 
 	//Variables
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventary") int Coins = 0;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Inventary") int Potion = 0;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
 	int32 PotionCount = 0;
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	void AddPotion(int32 Amount);
+	void AddPotion(int32 AmountToAdd);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Potion")
 	float HealPerPotion = 25.f;
@@ -116,6 +119,12 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Components")
 	UStaminaComponent* StaminaComponent;
+
+	// Función que se ejecuta al apretar la 'E'
+	void OnInteractInput();
+
+	virtual void ReceiveItem_Implementation(int32 Amount, const FString& ItemName) override;
+
 
 protected:
 	virtual void BeginPlay() override;
@@ -185,10 +194,6 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	virtual void Landed(const FHitResult& Hit) override;
-
-
-
-
 	
 
 public:

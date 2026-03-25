@@ -6,13 +6,11 @@
 #include "UObject/Interface.h"
 #include "I_PickUp.generated.h"
 
-// This class does not need to be modified.
 UINTERFACE(MinimalAPI)
 class UI_PickUp : public UInterface
 {
 	GENERATED_BODY()
 };
-
 
 class CELESTIA_API II_PickUp
 {
@@ -20,10 +18,10 @@ class CELESTIA_API II_PickUp
 
 public:
 
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Pick Up")
-	void PickUp(int32 Amount, FString& ItemName);
+	
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interaction")
+	void Interact(AActor* Interactor);
 
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Player")
-	void AddPotion(int Potion);
-
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Interaction")
+	void ReceiveItem(int32 Amount, const FString& ItemName);
 };

@@ -2,44 +2,30 @@
 
 
 #include "ItemBase/ItemBase.h"
+#include "Components/BoxComponent.h"
+#include "Components/StaticMeshComponent.h"
 
-#include "Interfaces/I_PickUp.h"
-
-// Sets default values
 AItemBase::AItemBase()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-	
+	PrimaryActorTick.bCanEverTick = false;
+
 	BoxCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("Box Collision"));
 	RootComponent = BoxCollision;
+	BoxCollision->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
 
 	CubeMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Cube Mesh"));
 	CubeMesh->SetupAttachment(RootComponent);
-
+	CubeMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
-// Called when the game starts or when spawned
-void AItemBase::BeginPlay()
+void AItemBase::Interact_Implementation(AActor* Interactor)
 {
-	Super::BeginPlay();
-	
-}
-
-// Called every frame
-void AItemBase::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-
-void AItemBase::NotifyActorBeginOverlap(AActor* OtherActor)
-{
-	Super::NotifyActorBeginOverlap(OtherActor);
-
-	if (OtherActor && OtherActor->GetClass()->ImplementsInterface(UI_PickUp::StaticClass()))
+	if (Interactor && Interactor->GetClass()->ImplementsInterface(UI_PickUp::StaticClass()))
 	{
-		II_PickUp::Execute_PickUp(OtherActor, Amount, ItemName);
+		// Le enviamos nuestros datos al jugador
+		II_PickUp::Execute_ReceiveItem(Interactor, Amount, ItemName);
+
+		// Nos destruimos del mundo
 		Destroy();
 	}
 }
