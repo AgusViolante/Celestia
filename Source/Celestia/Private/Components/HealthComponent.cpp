@@ -1,6 +1,7 @@
 #include "Components/HealthComponent.h"
+#include "Components/StatsComponent.h"
 #include "Interfaces/DeathInterface.h"
-#include "Characters/EnemyCharacter.h"
+#include "Characters/EnemyBase.h"
 #include "../../CelestiaCharacter.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/Actor.h"
@@ -48,14 +49,32 @@ void UHealthComponent::BeginPlay()
     InitializeAfterSpawn(bAutoRegen, RegenDelaySeconds, RegenPerSecond, RegenTickInterval);
 }
 
-void UHealthComponent::TakeDamage(float Amount)
+void UHealthComponent::TakeDamage(float Amount, bool bIgnoreDefense)
 {
     if (Amount <= 0.f) return;
     if (IsDead()) return;
 
-    Health = FMath::Clamp(Health - Amount, 0.f, MaxHealth);
+    float FinalDamage = Amount;
 
-    OnHealthChanged.Broadcast(this, Health, MaxHealth, -Amount);
+    // Si no ignoramos la defensa, calculamos la mitigación
+    if (!bIgnoreDefense)
+    {
+        if (AActor* OwnerActor = GetOwner())
+        {
+            // Buscamos si el que recibe daño tiene Stats (el jugador lo tiene, los enemigos normales tal vez no)
+            if (UStatsComponent* StatsComp = OwnerActor->FindComponentByClass<UStatsComponent>())
+            {
+                float Defense = StatsComp->GetStatValue(ERPGStatType::MeleeDefense);
+
+                // Fórmula: Daño Final = Daño Base - Defensa (Nunca menor a 1.0f)
+                FinalDamage = FMath::Max(1.0f, Amount - Defense);
+            }
+        }
+    }
+
+    Health = FMath::Clamp(Health - FinalDamage, 0.f, MaxHealth);
+
+    OnHealthChanged.Broadcast(this, Health, MaxHealth, -FinalDamage);
 
     if (GetWorld())
     {
@@ -64,16 +83,13 @@ void UHealthComponent::TakeDamage(float Amount)
 
     if (GEngine)
     {
-       
         GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Red,
-            FString::Printf(TEXT("Recibio danio: -%.2f | Vida actual: %.2f"), Amount, Health));
+            FString::Printf(TEXT("Recibio danio: -%.2f (Danio bruto: %.2f) | Vida: %.2f"), FinalDamage, Amount, Health));
     }
 
     if (IsDead())
     {
         AActor* Owner = GetOwner();
-
-
         OnDeath.Broadcast(Owner);
 
         if (GEngine)
@@ -83,7 +99,6 @@ void UHealthComponent::TakeDamage(float Amount)
         }
     }
 }
-
 void UHealthComponent::Heal(float Amount)
 {
     if (Amount <= 0.f) return;
@@ -166,7 +181,7 @@ bool UHealthComponent::IsRegenTimerActive() const
     {
         if (!GetOwner()) return TEXT("Desconocido");
 
-        if (GetOwner()->IsA(AEnemyCharacter::StaticClass()))
+        if (GetOwner()->IsA(AEnemyBase::StaticClass()))
         {
             return TEXT("Enemigo");
         }

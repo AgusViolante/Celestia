@@ -6,7 +6,7 @@
 #include "Engine/TargetPoint.h"
 #include "EnemySpawner.generated.h"
 
-class AEnemyCharacter;
+class AEnemyBase;
 class UHealthComponent;
 
 UCLASS()
@@ -19,7 +19,7 @@ public:
 
 
     UPROPERTY(EditAnywhere, Category = "Spawner")
-    TSubclassOf<AEnemyCharacter> EnemyClass;
+    TSubclassOf<AEnemyBase> EnemyClass;
 
 
     UPROPERTY(EditAnywhere, Category = "Spawner")
@@ -52,7 +52,7 @@ protected:
     void OnSpawnedEnemyDeath(AActor* DeadOwner);
 
     UPROPERTY()
-    TMap<AEnemyCharacter*, int32> EnemyToSpawnIndexMap;
+    TMap<AEnemyBase*, int32> EnemyToSpawnIndexMap;
 
 public:
     UFUNCTION(BlueprintCallable, Category = "Spawner")

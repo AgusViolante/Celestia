@@ -42,8 +42,8 @@ public:
     UPROPERTY(BlueprintAssignable, Category = "Health")
     FOnHealthChangedSignature OnHealthChanged;
 
-    UFUNCTION(BlueprintCallable, Category="Health")
-    void TakeDamage(float Amount);
+    UFUNCTION(BlueprintCallable, Category = "Health")
+    void TakeDamage(float Amount, bool bIgnoreDefense = false);
 
     UFUNCTION(BlueprintCallable, Category="Health")
     void Heal(float Amount);

@@ -1,207 +1,72 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-
 #include "AI/EnemyAIController.h"
-#include "NavigationSystem.h"
-#include "GameFramework/Actor.h"
-#include "Components/CapsuleComponent.h"
-#include "GameFramework/Pawn.h"
+#include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
-#include "Characters/EnemyCharacter.h"
-#include "Engine/TargetPoint.h"
-#include "TimerManager.h"
-#include "Kismet/GameplayStatics.h"
+#include "Perception/AIPerceptionComponent.h"
+#include "Perception/AISenseConfig_Sight.h"
+#include "../CelestiaCharacter.h" 
 
 AEnemyAIController::AEnemyAIController()
 {
-    PrimaryActorTick.bCanEverTick = false;
+    PrimaryActorTick.bCanEverTick = true;
+
+    // Componente de percepción y la configuración de vista
+    EnemyPerceptionComp = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("EnemyPerceptionComp"));
+    SightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("SightConfig"));
+
+    // qué tan lejos ve el enemigo
+    SightConfig->SightRadius = 800.f; // Distancia de visión
+    SightConfig->LoseSightRadius = 1000.f; // Distancia a la que te pierde de vista
+    SightConfig->PeripheralVisionAngleDegrees = 60.f; // Qué tan amplio es su cono de visión
+    SightConfig->SetMaxAge(5.0f); // Cuánto tiempo recuerda al objetivo después de perderlo
+
+    // qué cosas puede detectar (en este caso, todo)
+    SightConfig->DetectionByAffiliation.bDetectEnemies = true;
+    SightConfig->DetectionByAffiliation.bDetectFriendlies = true;
+    SightConfig->DetectionByAffiliation.bDetectNeutrals = true;
+
+    // 4. Asignamos la vista al componente principal
+    EnemyPerceptionComp->ConfigureSense(*SightConfig);
+    EnemyPerceptionComp->SetDominantSense(UAISense_Sight::StaticClass());
 }
 
 void AEnemyAIController::OnPossess(APawn* InPawn)
 {
     Super::OnPossess(InPawn);
 
-    ControlledEnemy = Cast<AEnemyCharacter>(InPawn);
-    CurrentPatrolIndex = 0;
+    // Conectamos nuestros "ojos" a la función que escribimos
+    EnemyPerceptionComp->OnTargetPerceptionUpdated.AddDynamic(this, &AEnemyAIController::OnTargetDetected);
 
-    if (ControlledEnemy && !bIsChasing && ControlledEnemy->PatrolPoints.Num() > 0)
+    // Si le asignamos un Behavior Tree en el editor, lo arrancamos
+    if (BehaviorTreeAsset)
     {
-        MoveToNextPatrolPoint();
+        RunBehaviorTree(BehaviorTreeAsset);
     }
 }
 
-void AEnemyAIController::OnUnPossess()
+void AEnemyAIController::OnTargetDetected(AActor* Actor, FAIStimulus Stimulus)
 {
-    GetWorld()->GetTimerManager().ClearTimer(WaitTimerHandle);
-    GetWorld()->GetTimerManager().ClearTimer(ResumePatrolTimerHandle);
-    GetWorld()->GetTimerManager().ClearTimer(ChaseReissueTimerHandle);
-
-    ControlledEnemy = nullptr;
-    bIsChasing = false;
-    ChaseTarget = nullptr;
-
-    Super::OnUnPossess();
-}
-
-void AEnemyAIController::MoveToNextPatrolPoint()
-{
-    if (!ControlledEnemy || bIsChasing) return; 
-
-    const TArray<ATargetPoint*>& Points = ControlledEnemy->PatrolPoints;
-    if (Points.Num() == 0) return;
-
-    ATargetPoint* Destination = Points.IsValidIndex(CurrentPatrolIndex) ? Points[CurrentPatrolIndex] : nullptr;
-    if (!Destination)
+    // Solo nos importa si lo que vimos es el Jugador
+    if (ACelestiaCharacter* Player = Cast<ACelestiaCharacter>(Actor))
     {
-        CurrentPatrolIndex = (CurrentPatrolIndex + 1) % Points.Num();
-        return;
-    }
-
-    MoveToActor(Destination, ControlledEnemy->PatrolAcceptanceRadius);
-}
-
-void AEnemyAIController::OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result)
-{
-    Super::OnMoveCompleted(RequestID, Result);
-
-
-    if (bIsChasing)
-    {
-        if (ChaseTarget.IsValid())
+        if (Stimulus.WasSuccessfullySensed())
         {
-
-            if (IsWithinContactRange(ChaseTarget.Get()))
+            // EL ENEMIGO NOS VIO
+            // Aquí le avisaremos al Blackboard en el futuro
+            if (GetBlackboardComponent())
             {
-                if (ControlledEnemy)
-                {
-                    ControlledEnemy->StartDamage(ChaseTarget.Get());
-                }
-
-            
-                const float ReissueDelay = 0.12f;
-                GetWorld()->GetTimerManager().ClearTimer(ChaseReissueTimerHandle);
-                GetWorld()->GetTimerManager().SetTimer(ChaseReissueTimerHandle, this, &AEnemyAIController::ReissueChaseAfterDelay, ReissueDelay, false);
-
-                UE_LOG(LogTemp, Verbose, TEXT("[AI] In contact range: started damage and scheduled reissue"));
+                GetBlackboardComponent()->SetValueAsObject(FName("TargetActor"), Player);
             }
-            else
-            {
-                const float ReissueDelay = 0.12f;
-                GetWorld()->GetTimerManager().ClearTimer(ChaseReissueTimerHandle);
-                GetWorld()->GetTimerManager().SetTimer(ChaseReissueTimerHandle, this, &AEnemyAIController::ReissueChaseAfterDelay, ReissueDelay, false);
-
-                UE_LOG(LogTemp, Verbose, TEXT("[AI] OnMoveCompleted while chasing - scheduling reissue"));
-            }
-        }
-        return;
-    }
-
-    if (!bIsChasing && ControlledEnemy)
-    {
-        if (Result.IsSuccess())
-        {
-            CurrentPatrolIndex = (CurrentPatrolIndex + 1) % ControlledEnemy->PatrolPoints.Num();
-            GetWorld()->GetTimerManager().SetTimer(WaitTimerHandle, this, &AEnemyAIController::OnWaitOver, ControlledEnemy->PatrolWaitTime, false);
+            UE_LOG(LogTemp, Warning, TEXT("El enemigo vio al jugador!"));
         }
         else
         {
-            GetWorld()->GetTimerManager().SetTimer(WaitTimerHandle, this, &AEnemyAIController::OnWaitOver, 0.5f, false);
+            // EL ENEMIGO NOS PERDIÓ DE VISTA
+            if (GetBlackboardComponent())
+            {
+                GetBlackboardComponent()->ClearValue(FName("TargetActor"));
+            }
+            UE_LOG(LogTemp, Warning, TEXT("El enemigo perdio al jugador!"));
         }
     }
-}
-
-void AEnemyAIController::StartPatrol()
-{
-    // Si no hay pawn/controlado o si estamos en chase, no hacemos nada.
-    if (!ControlledEnemy || bIsChasing) return;
-
-    // Empezamos desde el índice actual (normalmente 0)
-    if (ControlledEnemy->PatrolPoints.Num() == 0) return;
-
-    // Si el current index está fuera de rango, lo normalizamos
-    if (!ControlledEnemy->PatrolPoints.IsValidIndex(CurrentPatrolIndex))
-    {
-        CurrentPatrolIndex = 0;
-    }
-
-    MoveToNextPatrolPoint();
-}
-
-void AEnemyAIController::RestartPatrol()
-{
-    if (!ControlledEnemy || bIsChasing) return;
-
-    CurrentPatrolIndex = 0;
-    MoveToNextPatrolPoint();
-}
-
-void AEnemyAIController::OnWaitOver()
-{
-    if (!bIsChasing)
-    {
-        MoveToNextPatrolPoint();
-    }
-}
-
-void AEnemyAIController::StartChasing(AActor* TargetActor, float AcceptanceRadius)
-{
-    if (!TargetActor || !ControlledEnemy) return;
-
-    bIsChasing = true;
-    ChaseTarget = TargetActor;
-
-
-    ChaseAcceptanceRadius = FMath::Clamp(AcceptanceRadius, 0.f, 2000.f);
-
-
-    GetWorld()->GetTimerManager().ClearTimer(WaitTimerHandle);
-
-
-    MoveToActor(TargetActor, ChaseAcceptanceRadius, true, true, true, 0, true);
-
-    UE_LOG(LogTemp, Log, TEXT("[AI] StartChasing %s (acceptance %.2f)"), *GetNameSafe(TargetActor), ChaseAcceptanceRadius);
-}
-
-void AEnemyAIController::StopChasing()
-{
-    if (!bIsChasing) return;
-
-    bIsChasing = false;
-    ChaseTarget = nullptr;
-
-    StopMovement();
-
-
-    const float DelayBeforeResume = 0.5f;
-    GetWorld()->GetTimerManager().ClearTimer(ResumePatrolTimerHandle);
-    GetWorld()->GetTimerManager().SetTimer(ResumePatrolTimerHandle, this, &AEnemyAIController::ResumePatrol, DelayBeforeResume, false);
-}
-
-void AEnemyAIController::ResumePatrol()
-{
-    if (!ControlledEnemy || bIsChasing) return;
-    if (ControlledEnemy->PatrolPoints.Num() == 0) return;
-
-    MoveToNextPatrolPoint();
-}
-
-void AEnemyAIController::ReissueChaseAfterDelay()
-{
-    if (!bIsChasing || !ChaseTarget.IsValid()) return;
-
-    MoveToActor(ChaseTarget.Get(), ChaseAcceptanceRadius);
-}
-
-bool AEnemyAIController::IsWithinContactRange(AActor* Target) const
-{
-    if (!ControlledEnemy || !Target) return false;
-
-    UCapsuleComponent* EnemyCapsule = ControlledEnemy->GetCapsuleComponent();
-    UCapsuleComponent* TargetCapsule = Cast<APawn>(Target)->FindComponentByClass<UCapsuleComponent>();
-    if (!EnemyCapsule || !TargetCapsule) return false;
-
-    const float EnemyRadius = EnemyCapsule->GetScaledCapsuleRadius();
-    const float TargetRadius = TargetCapsule->GetScaledCapsuleRadius();
-    const float Distance = FVector::Dist(ControlledEnemy->GetActorLocation(), Target->GetActorLocation());
-    const float Epsilon = 5.0f;
-    return Distance <= (EnemyRadius + TargetRadius + Epsilon);
 }

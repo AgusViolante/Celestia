@@ -20,6 +20,8 @@
 #include "UI/UIPlayerHUD.h"
 #include "Components/StaminaComponent.h"
 #include "Components/ProgressionComponent.h"
+#include "Components/StatsComponent.h"
+#include "Components/ManaComponent.h"
 
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -75,6 +77,9 @@ ACelestiaCharacter::ACelestiaCharacter()
 
 	ProgressionComponent = CreateDefaultSubobject<UProgressionComponent>(TEXT("Progression Component"));
 
+	StatsComponent = CreateDefaultSubobject<UStatsComponent>(TEXT("StatsComponent"));
+	ManaComponent = CreateDefaultSubobject<UManaComponent>(TEXT("ManaComponent"));
+
 }
 
 void ACelestiaCharacter::BeginPlay()
@@ -117,7 +122,21 @@ void ACelestiaCharacter::BeginPlay()
 				StaminaComponent->OnStaminaChanged.AddDynamic(PlayerHUDInstance, &UUIPlayerHUD::UpdateStamina);
 				PlayerHUDInstance->UpdateStamina(StaminaComponent, StaminaComponent->CurrentStamina, StaminaComponent->MaxStamina);
 			}
-		
+			if (ManaComponent)
+			{
+				ManaComponent->OnManaChanged.AddDynamic(PlayerHUDInstance, &UUIPlayerHUD::UpdateMana);
+				PlayerHUDInstance->UpdateMana(ManaComponent->GetCurrentMana(), ManaComponent->GetMaxMana());
+			}
+
+			if (StatsComponent)
+			{
+				StatsComponent->OnStatChanged.AddDynamic(PlayerHUDInstance, &UUIPlayerHUD::UpdateStat);
+				PlayerHUDInstance->UpdateStat(ERPGStatType::Strength, StatsComponent->GetStatValue(ERPGStatType::Strength));
+				PlayerHUDInstance->UpdateStat(ERPGStatType::Dexterity, StatsComponent->GetStatValue(ERPGStatType::Dexterity));
+				PlayerHUDInstance->UpdateStat(ERPGStatType::Intelligence, StatsComponent->GetStatValue(ERPGStatType::Intelligence));
+				PlayerHUDInstance->UpdateStat(ERPGStatType::Wisdom, StatsComponent->GetStatValue(ERPGStatType::Wisdom));
+				PlayerHUDInstance->UpdateStat(ERPGStatType::Endurance, StatsComponent->GetStatValue(ERPGStatType::Endurance));
+			}
 		}
 	}
 
@@ -129,6 +148,17 @@ void ACelestiaCharacter::BeginPlay()
 	if (StaminaComponent)
 	{
 		StaminaComponent->OnStaminaExhausted.AddDynamic(this, &ACelestiaCharacter::OnStaminaExhausted);
+	}
+
+	if (StatsComponent)
+	{
+		StatsComponent->OnMaxManaCalculated.AddDynamic(this, &ACelestiaCharacter::OnMaxManaCalculated);
+		StatsComponent->OnMaxHealthCalculated.AddDynamic(this, &ACelestiaCharacter::OnMaxHealthCalculated);
+	}
+
+	if (ProgressionComponent && StatsComponent)
+	{
+		ProgressionComponent->OnLevelUp.AddDynamic(StatsComponent, &UStatsComponent::OnLevelUp);
 	}
 }
 void ACelestiaCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -456,7 +486,7 @@ void ACelestiaCharacter::Landed(const FHitResult& Hit)
 				FallDistance
 			);
 
-			HealthComponent->TakeDamage(FallDamage);
+			HealthComponent->TakeDamage(FallDamage, true);
 
 			if (GEngine)
 			{
@@ -470,7 +500,33 @@ void ACelestiaCharacter::Landed(const FHitResult& Hit)
 	MaxZHeightDuringFall = GetActorLocation().Z;
 }
 
+void ACelestiaCharacter::OnMaxManaCalculated(float NewMaxMana)
+{
+	if (ManaComponent)
+	{
+		ManaComponent->UpdateMaxMana(NewMaxMana);
+	}
+}
+void ACelestiaCharacter::OnMaxHealthCalculated(float NewMaxHealth)
+{
+	if (HealthComponent)
+	{
+		// 1. Calculamos cuánta vida extra estamos ganando
+		float HealthDifference = NewMaxHealth - HealthComponent->MaxHealth;
 
+		// 2. Actualizamos el límite
+		HealthComponent->MaxHealth = NewMaxHealth;
+
+		// 3. Le sumamos esa misma diferencia a la vida actual para no "lastimar" al jugador
+		HealthComponent->Health += HealthDifference;
+
+		// Aseguramos que no se pase
+		HealthComponent->Health = FMath::Clamp(HealthComponent->Health, 0.f, HealthComponent->MaxHealth);
+
+		// 4. Disparamos el evento pasando la diferencia como un delta positivo (curación)
+		HealthComponent->OnHealthChanged.Broadcast(HealthComponent, HealthComponent->Health, HealthComponent->MaxHealth, HealthDifference);
+	}
+}
 
 
 

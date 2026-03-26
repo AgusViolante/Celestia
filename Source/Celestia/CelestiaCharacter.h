@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
+#include "Components/StatsComponent.h"
 #include "Interfaces/I_PickUp.h"
 
 
@@ -20,6 +21,8 @@ struct FInputActionInstance;
 class UUIPlayerHUD;
 class UStaminaComponent;
 class UProgressionComponent;
+class UStatsComponent;
+class UManaComponent;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
@@ -77,6 +80,12 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UProgressionComponent> ProgressionComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UStatsComponent> StatsComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UManaComponent> ManaComponent;
 
 
 public:
@@ -158,6 +167,12 @@ protected:
 
 	UFUNCTION()
 	void OnStaminaExhausted();
+
+	UFUNCTION()
+	void OnMaxManaCalculated(float NewMaxMana);
+
+	UFUNCTION()
+	void OnMaxHealthCalculated(float NewMaxHealth);
 
 protected:
 
