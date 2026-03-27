@@ -5,11 +5,11 @@ UStatsComponent::UStatsComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 
-	Strength = FRPGStat(10.0f);
-	Dexterity = FRPGStat(10.0f);
-	Intelligence = FRPGStat(10.0f);
-	Wisdom = FRPGStat(10.0f);
-	Endurance = FRPGStat(10.0f);
+	Strength = FRPGStat(1.0f);
+	Dexterity = FRPGStat(1.0f);
+	Intelligence = FRPGStat(1.0f);
+	Wisdom = FRPGStat(1.0f);
+	Endurance = FRPGStat(1.0f);
 }
 
 void UStatsComponent::BeginPlay()
@@ -110,11 +110,11 @@ void UStatsComponent::ModifyStat(ERPGStatType Stat, float Amount, bool bIsAdding
 
 void UStatsComponent::OnLevelUp(int32 NewLevel)
 {
-	Strength.BaseValue += 2.0f;
-	Dexterity.BaseValue += 2.0f;
-	Intelligence.BaseValue += 2.0f;
-	Wisdom.BaseValue += 2.0f;
-	Endurance.BaseValue += 2.0f;
+	Strength.BaseValue += 1.0f;
+	Dexterity.BaseValue += 1.0f;
+	Intelligence.BaseValue += 1.0f;
+	Wisdom.BaseValue += 1.0f;
+	Endurance.BaseValue += 1.0f;
 
 	RecalculateDerivedStats();
 

@@ -6,7 +6,7 @@
 #include "UObject/Interface.h"
 #include "I_PickUp.generated.h"
 
-UINTERFACE(MinimalAPI)
+UINTERFACE(MinimalAPI, Blueprintable)
 class UI_PickUp : public UInterface
 {
 	GENERATED_BODY()

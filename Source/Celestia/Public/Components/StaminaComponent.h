@@ -19,7 +19,7 @@ public:
 	UStaminaComponent();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stamina")
-	float MaxStamina = 100.f;
+	float MaxStamina = 50.f;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stamina")
 	float CurrentStamina;

@@ -54,3 +54,17 @@ void UManaComponent::UpdateMaxMana(float NewMaxMana)
 	// 4. Disparamos el evento para que la barra azul de la UI se actualice de golpe
 	OnManaChanged.Broadcast(CurrentMana, MaxMana);
 }
+
+bool UManaComponent::TryRestoreMana(float AmountToRestore)
+{
+	
+	if (FMath::IsNearlyEqual(CurrentMana, MaxMana))
+	{
+		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Yellow, TEXT("Mana lleno. Pocion cancelada."));
+		return false;
+	}
+
+	
+	RestoreMana(AmountToRestore);
+	return true;
+}

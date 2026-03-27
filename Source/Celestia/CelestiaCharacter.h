@@ -87,6 +87,11 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UManaComponent> ManaComponent;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Input")
+	UInputAction* IA_Mana;
+
+	UFUNCTION()
+	void Debug_UseManaPotionInput();
 
 public:
 
@@ -173,6 +178,18 @@ protected:
 
 	UFUNCTION()
 	void OnMaxHealthCalculated(float NewMaxHealth);
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
+	int32 ManaPotionCount = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Potion")
+	float RestorePerManaPotion = 25.f;
+
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void AddManaPotion(int32 AmountToAdd);
+
+	UFUNCTION(BlueprintCallable, Category = "Potion")
+	bool TryUseManaPotion(int32 NumPotions = 1);
 
 protected:
 

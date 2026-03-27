@@ -197,6 +197,10 @@ void ACelestiaCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 			DashComponent->BindInput(EnhancedInputComponent);
 
 		}
+		if (IA_Mana)
+		{
+			EnhancedInputComponent->BindAction(IA_Mana, ETriggerEvent::Started, this, &ACelestiaCharacter::Debug_UseManaPotionInput);
+		}
 
 	}
 	else
@@ -282,15 +286,6 @@ void ACelestiaCharacter::OnInteractInput()
 			
 			break;
 		}
-	}
-}
-
-void ACelestiaCharacter::ReceiveItem_Implementation(int32 Amount, const FString& ItemName)
-{
-	
-	if (ItemName == "PocionVida")
-	{
-		AddPotion(Amount);
 	}
 }
 
@@ -527,7 +522,71 @@ void ACelestiaCharacter::OnMaxHealthCalculated(float NewMaxHealth)
 		HealthComponent->OnHealthChanged.Broadcast(HealthComponent, HealthComponent->Health, HealthComponent->MaxHealth, HealthDifference);
 	}
 }
+void ACelestiaCharacter::ReceiveItem_Implementation(int32 Amount, const FString& ItemName)
+{
+	if (ItemName == "PocionVida")
+	{
+		AddPotion(Amount);
+	}
+	else if (ItemName == "PocionMana")
+	{
+		AddManaPotion(Amount);
+	}
 
+}
+void ACelestiaCharacter::AddManaPotion(int32 AmountToAdd)
+{
+	ManaPotionCount += AmountToAdd;
 
+	if (GEngine)
+	{
+		const FString Msg = FString::Printf(TEXT("Pociones de Mana: %d"), ManaPotionCount);
+		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Blue, Msg);
+	}
+}
+
+bool ACelestiaCharacter::TryUseManaPotion(int32 NumPotions)
+{
+	if (NumPotions <= 0) return false;
+
+	if (!ManaComponent)
+	{
+		return false;
+	}
+
+	// Evitar usar si el maná ya está al máximo
+	if (FMath::IsNearlyEqual(ManaComponent->GetCurrentMana(), ManaComponent->GetMaxMana()))
+	{
+		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Yellow, TEXT("Ya tenes el mana al maximo"));
+		return false;
+	}
+
+	if (ManaPotionCount <= 0)
+	{
+		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Yellow, TEXT("No hay pociones de mana disponibles"));
+		return false;
+	}
+
+	const int32 Use = FMath::Clamp(NumPotions, 1, ManaPotionCount);
+	const float AmountToRestore = Use * RestorePerManaPotion;
+
+	// Restaurar el maná a través del componente
+	ManaComponent->RestoreMana(AmountToRestore);
+
+	// Restar del inventario
+	ManaPotionCount -= Use;
+
+	if (GEngine)
+	{
+		const FString Msg = FString::Printf(TEXT("Usaste pocion de mana. Restantes: %d"), ManaPotionCount);
+		GEngine->AddOnScreenDebugMessage(-1, 4.0f, FColor::Blue, Msg);
+	}
+
+	return true;
+}
+void ACelestiaCharacter::Debug_UseManaPotionInput()
+{
+	TryUseManaPotion();
+}
 
 

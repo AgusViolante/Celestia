@@ -40,4 +40,7 @@ public:
 	// Getters
 	float GetCurrentMana() const { return CurrentMana; }
 	float GetMaxMana() const { return MaxMana; }
+
+	UFUNCTION(BlueprintCallable, Category = "Mana")
+	bool TryRestoreMana(float AmountToRestore);
 };
