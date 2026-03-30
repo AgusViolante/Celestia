@@ -20,27 +20,35 @@ void UStatsComponent::BeginPlay()
 
 void UStatsComponent::RecalculateDerivedStats()
 {
-	MaxHealth.BaseValue = Endurance.GetTotal() * 10.0f;
+	// Vida: 90 Base + (Endurance * 10) = 100 a nivel 1. Sube 10 por cada punto.
+	MaxHealth.BaseValue = 90.0f + (Endurance.GetTotal() * 10.0f);
 	OnMaxHealthCalculated.Broadcast(MaxHealth.GetTotal());
 
-	float CalculatedMaxMana = Intelligence.GetTotal() * 5.0f;
+	// Maná: 95 Base + (Intelligence * 5) = 100 a nivel 1. Sube 5 por cada punto.
+	float CalculatedMaxMana = 95.0f + (Intelligence.GetTotal() * 5.0f);
 	OnMaxManaCalculated.Broadcast(CalculatedMaxMana);
 
-	MeleeAttack.BaseValue = Strength.GetTotal() * 2.0f;
+	// Ataque Cuerpo a Cuerpo: 5 Base + (Strength * 2) = 7 a nivel 1.
+	MeleeAttack.BaseValue = 5.0f + (Strength.GetTotal() * 2.0f);
 	OnStatChanged.Broadcast(ERPGStatType::MeleeAttack, MeleeAttack.GetTotal());
 
-	RangedAttack.BaseValue = Dexterity.GetTotal() * 2.0f;
+	// Ataque a Distancia: 5 Base + (Dexterity * 2) = 7 a nivel 1.
+	RangedAttack.BaseValue = 5.0f + (Dexterity.GetTotal() * 2.0f);
 	OnStatChanged.Broadcast(ERPGStatType::RangedAttack, RangedAttack.GetTotal());
 
-	MagicAttack.BaseValue = Intelligence.GetTotal() * 2.0f;
+	// Ataque Mágico: 5 Base + (Intelligence * 2) = 7 a nivel 1.
+	MagicAttack.BaseValue = 5.0f + (Intelligence.GetTotal() * 2.0f);
 	OnStatChanged.Broadcast(ERPGStatType::MagicAttack, MagicAttack.GetTotal());
 
+	// Defensa Física: (Endurance * 1.5)
 	MeleeDefense.BaseValue = Endurance.GetTotal() * 1.5f;
 	OnStatChanged.Broadcast(ERPGStatType::MeleeDefense, MeleeDefense.GetTotal());
 
+	// Defensa Mágica: (Wisdom * 1.5)
 	MagicDefense.BaseValue = Wisdom.GetTotal() * 1.5f;
 	OnStatChanged.Broadcast(ERPGStatType::MagicDefense, MagicDefense.GetTotal());
 
+	// Críticos
 	MeleeCrit.BaseValue = Dexterity.GetTotal() * 0.5f;
 	OnStatChanged.Broadcast(ERPGStatType::MeleeCrit, MeleeCrit.GetTotal());
 
