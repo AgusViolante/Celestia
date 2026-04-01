@@ -31,6 +31,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UStaticMeshComponent> CubeMesh;
 
+	UPROPERTY()
+	bool bIsPickedUp = false;
+
 public:
 	// Implementación de la orden de interactuar que manda el jugador
 	virtual void Interact_Implementation(AActor* Interactor) override;

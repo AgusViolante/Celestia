@@ -3,12 +3,15 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/ProgressionComponent.h" 
 #include "Engine/World.h"
-#include "TimerManager.h" // Necesario para usar temporizadores
-#include "Math/UnrealMathUtility.h" // Necesario para generar los números aleatorios
+#include "TimerManager.h" 
+#include "Math/UnrealMathUtility.h" 
+#include "Net/UnrealNetwork.h"
 
 AChest::AChest()
 {
 	PrimaryActorTick.bCanEverTick = false;
+
+	bReplicates = true;
 
 	BoxCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("Box Collision"));
 	RootComponent = BoxCollision;
@@ -20,8 +23,16 @@ AChest::AChest()
 	ChestMesh->SetCollisionProfileName(TEXT("BlockAll"));
 }
 
+void AChest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AChest, bIsLooted);
+}
+
 void AChest::Interact_Implementation(AActor* Interactor)
 {
+	if (!HasAuthority()) return;
 
 	if (bIsLooted) return;
 
@@ -65,9 +76,21 @@ void AChest::Interact_Implementation(AActor* Interactor)
 		}
 
 
-		OnChestOpenedVisuals();
+		Multicast_OnChestOpened();
 
 		GetWorld()->GetTimerManager().SetTimer(DestroyTimerHandle, this, &AChest::DestroyChest, DestroyDelay, false);
+	}
+}
+void AChest::Multicast_OnChestOpened_Implementation()
+{
+	OnChestOpenedVisuals();
+}
+
+void AChest::OnRep_IsLooted()
+{
+	if (bIsLooted)
+	{
+		OnChestOpenedVisuals();
 	}
 }
 

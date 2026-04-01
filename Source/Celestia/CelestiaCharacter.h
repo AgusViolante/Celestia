@@ -137,6 +137,9 @@ public:
 	// Función que se ejecuta al apretar la 'E'
 	void OnInteractInput();
 
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_Interact(AActor* TargetActor);
+
 	virtual void ReceiveItem_Implementation(int32 Amount, const FString& ItemName) override;
 
 

@@ -280,12 +280,29 @@ void ACelestiaCharacter::OnInteractInput()
 	{
 		if (Actor && Actor->GetClass()->ImplementsInterface(UI_PickUp::StaticClass()))
 		{
-			
-			II_PickUp::Execute_Interact(Actor, this);
-
-			
+			if (HasAuthority())
+			{
+				II_PickUp::Execute_Interact(Actor, this);
+			}
+			else
+			{
+				Server_Interact(Actor);
+			}
 			break;
 		}
+	}
+}
+
+bool ACelestiaCharacter::Server_Interact_Validate(AActor* TargetActor)
+{
+	return true; 
+}
+
+void ACelestiaCharacter::Server_Interact_Implementation(AActor* TargetActor)
+{
+	if (TargetActor && TargetActor->GetClass()->ImplementsInterface(UI_PickUp::StaticClass()))
+	{
+		II_PickUp::Execute_Interact(TargetActor, this);
 	}
 }
 

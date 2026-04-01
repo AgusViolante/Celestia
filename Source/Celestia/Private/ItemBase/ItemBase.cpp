@@ -9,6 +9,9 @@ AItemBase::AItemBase()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
+	bReplicates = true;
+	SetReplicateMovement(true);
+
 	BoxCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("Box Collision"));
 	RootComponent = BoxCollision;
 	BoxCollision->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
@@ -20,6 +23,11 @@ AItemBase::AItemBase()
 
 void AItemBase::Interact_Implementation(AActor* Interactor)
 {
+	if (!HasAuthority()) return;
+
+	if (bIsPickedUp) return;
+	bIsPickedUp = true;
+
 	if (Interactor && Interactor->GetClass()->ImplementsInterface(UI_PickUp::StaticClass()))
 	{
 		// Le enviamos nuestros datos al jugador

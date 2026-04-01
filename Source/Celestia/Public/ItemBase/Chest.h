@@ -32,14 +32,23 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chest | Settings")
 	float DestroyDelay = 1.5f;
 
+	UPROPERTY(ReplicatedUsing = OnRep_IsLooted)
 	bool bIsLooted = false;
+
+	UFUNCTION()
+	void OnRep_IsLooted();
 
 	FTimerHandle DestroyTimerHandle;
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Chest | Events")
 	void OnChestOpenedVisuals();
 
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_OnChestOpened();
+
 	void DestroyChest();
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 public:
 	virtual void Interact_Implementation(AActor* Interactor) override;
