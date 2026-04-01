@@ -55,6 +55,14 @@ public:
 protected:
     virtual void BeginPlay() override;
 
+    UFUNCTION(Server, Reliable, WithValidation)
+    void Server_TriggerDash();
+
+    UFUNCTION(NetMulticast, Unreliable)
+    void Multicast_DashVisuals();
+
+    void ExecuteDashPhysics();
+
 private:
     bool bCanDash = true;
     bool bIsBound = false;

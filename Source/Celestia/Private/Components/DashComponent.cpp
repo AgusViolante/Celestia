@@ -16,6 +16,8 @@ UDashComponent::UDashComponent()
     bCanDash = true;
     bIsBound = false;
     bFrictionSaved = false;
+
+    SetIsReplicatedByDefault(true);
 }
 
 void UDashComponent::BeginPlay()
@@ -68,6 +70,41 @@ void UDashComponent::TriggerDash()
     ACharacter* OwnerChar = Cast<ACharacter>(GetOwner());
     if (!OwnerChar) return;
 
+    if (OwnerChar->IsLocallyControlled() || OwnerChar->HasAuthority())
+    {
+        ExecuteDashPhysics();
+    }
+
+    if (!OwnerChar->HasAuthority() && OwnerChar->IsLocallyControlled())
+    {
+        Server_TriggerDash();
+    }
+}
+
+bool UDashComponent::Server_TriggerDash_Validate()
+{
+    return true; 
+}
+
+void UDashComponent::Server_TriggerDash_Implementation()
+{
+    ExecuteDashPhysics();
+
+    Multicast_DashVisuals();
+}
+
+void UDashComponent::Multicast_DashVisuals_Implementation()
+{
+    ACharacter* OwnerChar = Cast<ACharacter>(GetOwner());
+    if (!OwnerChar) return;
+
+   
+}
+void UDashComponent::ExecuteDashPhysics()
+{
+    ACharacter* OwnerChar = Cast<ACharacter>(GetOwner());
+    if (!OwnerChar) return;
+
     const bool bIsFalling = OwnerChar->GetCharacterMovement() ? OwnerChar->GetCharacterMovement()->IsFalling() : false;
     const float Mult = bIsFalling ? FMath::Max(0.0f, AirDashMultiplier) : 1.0f;
 
@@ -100,7 +137,6 @@ void UDashComponent::TriggerDash()
         FVector LaunchVel = Forward * (DashStrength * Mult);
 
         OwnerChar->LaunchCharacter(LaunchVel, true, false);
-
 
         if (GetWorld() && bFrictionSaved)
         {
