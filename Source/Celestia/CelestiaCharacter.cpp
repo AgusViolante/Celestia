@@ -278,6 +278,7 @@ void ACelestiaCharacter::OnInteractInput()
 
 	for (AActor* Actor : OverlappingActors)
 	{
+		if (Actor->GetAttachParentActor() != nullptr) continue;
 		if (Actor && Actor->GetClass()->ImplementsInterface(UI_PickUp::StaticClass()))
 		{
 			if (HasAuthority())
