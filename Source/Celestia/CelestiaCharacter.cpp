@@ -160,6 +160,14 @@ void ACelestiaCharacter::BeginPlay()
 	{
 		ProgressionComponent->OnLevelUp.AddDynamic(StatsComponent, &UStatsComponent::OnLevelUp);
 	}
+	if (ProgressionComponent)
+	{
+		ProgressionComponent->OnXPGained.AddDynamic(PlayerHUDInstance, &UUIPlayerHUD::UpdateXP);
+		ProgressionComponent->OnLevelUp.AddDynamic(PlayerHUDInstance, &UUIPlayerHUD::UpdateLevel);
+
+		PlayerHUDInstance->UpdateXP(ProgressionComponent->CurrentXP, ProgressionComponent->MaxXPForNextLevel);
+		PlayerHUDInstance->UpdateLevel(ProgressionComponent->CurrentLevel);
+	}
 }
 void ACelestiaCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {

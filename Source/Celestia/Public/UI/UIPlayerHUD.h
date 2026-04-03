@@ -32,6 +32,15 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* ManaText;
 
+	UPROPERTY(meta = (BindWidget))
+	UProgressBar* XP_ProgressBar;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* Level_Text;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* XP_Text;
+
 	// --- TEXTOS DE ESTADÍSTICAS PRIMARIAS ---
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* Txt_STR;
@@ -60,4 +69,10 @@ public:
 
 	UFUNCTION()
 	void UpdateStat(ERPGStatType StatType, float NewValue);
+
+	UFUNCTION()
+	void UpdateXP(float CurrentXP, float MaxXP);
+
+	UFUNCTION()
+	void UpdateLevel(int32 NewLevel);
 };

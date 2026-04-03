@@ -92,3 +92,31 @@ void UUIPlayerHUD::UpdateStat(ERPGStatType StatType, float NewValue)
 		break;
 	}
 }
+void UUIPlayerHUD::UpdateXP(float CurrentXP, float MaxXP)
+{
+	
+	if (XP_ProgressBar && MaxXP > 0.0f)
+	{
+		float Percent = CurrentXP / MaxXP;
+		XP_ProgressBar->SetPercent(Percent);
+	}
+
+	if (XP_Text)
+	{
+		
+		int32 IntCurrentXP = FMath::FloorToInt(CurrentXP);
+		int32 IntMaxXP = FMath::FloorToInt(MaxXP);
+
+		
+		FString XPString = FString::Printf(TEXT("%d / %d"), IntCurrentXP, IntMaxXP);
+		XP_Text->SetText(FText::FromString(XPString));
+	}
+}
+
+void UUIPlayerHUD::UpdateLevel(int32 NewLevel)
+{
+	if (Level_Text)
+	{
+	Level_Text->SetText(FText::AsNumber(NewLevel));
+	}
+}
