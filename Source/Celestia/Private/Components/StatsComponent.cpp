@@ -25,8 +25,8 @@ void UStatsComponent::RecalculateDerivedStats()
 	OnMaxHealthCalculated.Broadcast(MaxHealth.GetTotal());
 
 	// Maná: 95 Base + (Intelligence * 5) = 100 a nivel 1. Sube 5 por cada punto.
-	float CalculatedMaxMana = 95.0f + (Intelligence.GetTotal() * 5.0f);
-	OnMaxManaCalculated.Broadcast(CalculatedMaxMana);
+	MaxMana.BaseValue = 95.0f + (Intelligence.GetTotal() * 5.0f);
+	OnMaxManaCalculated.Broadcast(MaxMana.GetTotal());
 
 	// Ataque Cuerpo a Cuerpo: 5 Base + (Strength * 2) = 7 a nivel 1.
 	MeleeAttack.BaseValue = 5.0f + (Strength.GetTotal() * 2.0f);
@@ -141,8 +141,9 @@ float UStatsComponent::GetStatValue(ERPGStatType StatType) const
 	case ERPGStatType::Intelligence: return Intelligence.GetTotal();
 	case ERPGStatType::Wisdom: return Wisdom.GetTotal();
 	case ERPGStatType::Endurance: return Endurance.GetTotal();
-		// Si en el futuro querés leer secundarios, los agregás acá
+	
 	case ERPGStatType::MaxHealth: return MaxHealth.GetTotal();
+	case ERPGStatType::MaxMana: return MaxMana.GetTotal();
 	case ERPGStatType::MagicAttack: return MagicAttack.GetTotal();
 	case ERPGStatType::MeleeAttack: return MeleeAttack.GetTotal();
 	case ERPGStatType::MeleeDefense: return MeleeDefense.GetTotal();

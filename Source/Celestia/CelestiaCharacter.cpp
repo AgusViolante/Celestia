@@ -490,20 +490,19 @@ void ACelestiaCharacter::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
 
-	// Calculamos cuántas unidades caímos desde nuestro punto más alto en el aire
 	float FallDistance = MaxZHeightDuringFall - GetActorLocation().Z;
 
-	// Si la caída fue mayor a la distancia mínima configurada, aplicamos daño
+	
 	if (FallDistance >= MinFallDistance)
 	{
 		if (HealthComponent)
 		{
-			// FMath::GetMappedRangeValueClamped es perfecto para esto:
-			// Convierte proporcionalmente el rango de Distancia en un rango de Daño.
-			// Si caíste MaxFallDistance (3000), el daño será MaxFallDamage (100), activando tu lógica de muerte y ragdoll.
+			float RealMinDamage = HealthComponent->MaxHealth * (MinFallDamagePercent / 100.f);
+			float RealMaxDamage = HealthComponent->MaxHealth * (MaxFallDamagePercent / 100.f);
+
 			float FallDamage = FMath::GetMappedRangeValueClamped(
 				FVector2D(MinFallDistance, MaxFallDistance),
-				FVector2D(MinFallDamage, MaxFallDamage),
+				FVector2D(RealMinDamage, RealMaxDamage),
 				FallDistance
 			);
 
@@ -512,12 +511,15 @@ void ACelestiaCharacter::Landed(const FHitResult& Hit)
 			if (GEngine)
 			{
 				GEngine->AddOnScreenDebugMessage(-1, 4.f, FColor::Orange,
-					FString::Printf(TEXT("Caida de %.1f metros! Danio: %.1f"), FallDistance / 100.f, FallDamage));
+					FString::Printf(TEXT("Caida de %.1f metros! Danio: %.1f (%.0f%% de vida)"),
+						FallDistance / 100.f,
+						FallDamage,
+						(FallDamage / HealthComponent->MaxHealth) * 100.f));
 			}
 		}
 	}
 
-	// Reseteamos el punto más alto tras tocar el suelo para evitar errores en el próximo salto
+
 	MaxZHeightDuringFall = GetActorLocation().Z;
 }
 

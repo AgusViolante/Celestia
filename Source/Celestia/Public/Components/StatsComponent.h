@@ -5,7 +5,6 @@
 #include "Components/ActorComponent.h"
 #include "StatsComponent.generated.h"
 
-// Cambiamos el nombre a ERPGStatType para no chocar con el motor
 UENUM(BlueprintType)
 enum class ERPGStatType : uint8
 {
@@ -14,14 +13,15 @@ enum class ERPGStatType : uint8
 	Intelligence	UMETA(DisplayName = "Inteligencia (INT)"),
 	Wisdom			UMETA(DisplayName = "Sabiduría (WIS)"),
 	Endurance		UMETA(DisplayName = "Resistencia (END)"),
-	MaxHealth		UMETA(DisplayName = "Salud Máxima"),
+	MaxHealth		UMETA(DisplayName = "Salud Maxima"),
+	MaxMana			UMETA(DisplayName = "Mana Maximo"),
 	MeleeAttack		UMETA(DisplayName = "Ataque Melee"),
 	RangedAttack	UMETA(DisplayName = "Ataque a Distancia"),
-	MagicAttack		UMETA(DisplayName = "Ataque Mágico"),
+	MagicAttack		UMETA(DisplayName = "Ataque Magico"),
 	MeleeDefense	UMETA(DisplayName = "Defensa Melee"),
-	MagicDefense	UMETA(DisplayName = "Defensa Mágica"),
-	MeleeCrit		UMETA(DisplayName = "Crítico Físico (%)"),
-	MagicCrit		UMETA(DisplayName = "Crítico Mágico (%)")
+	MagicDefense	UMETA(DisplayName = "Defensa Magica"),
+	MeleeCrit		UMETA(DisplayName = "Critico Fisico (%)"),
+	MagicCrit		UMETA(DisplayName = "Critico Magico (%)")
 };
 
 USTRUCT(BlueprintType)
@@ -45,7 +45,6 @@ struct FRPGStat
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMaxManaCalculatedSignature, float, NewMaxMana);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMaxHealthCalculatedSignature, float, NewMaxHealth);
-// Actualizamos el delegado para que use el nuevo nombre
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnStatChangedSignature, ERPGStatType, StatType, float, NewTotalValue);
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
@@ -76,6 +75,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats | Secondary")
 	FRPGStat MaxHealth;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats | Secondary")
+	FRPGStat MaxMana;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats | Secondary")
 	FRPGStat MeleeAttack;

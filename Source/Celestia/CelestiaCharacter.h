@@ -157,21 +157,21 @@ protected:
 	UPROPERTY()
 	float MaxZHeightDuringFall = 0.f;
 
-	// Distancia mínima en el aire para empezar a sufrir daño (1000 unidades = 10 metros)
+	// Distancia mínima en el aire para empezar a sufrir daño
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Fall Damage")
 	float MinFallDistance = 1000.f;
 
-	// Distancia que causa el daño máximo / muerte instantánea
+	// Distancia que causa el daño máximo
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Fall Damage")
 	float MaxFallDistance = 2000.f;
 
-	// Daño que recibís si caés justo la distancia mínima
+	// PORCENTAJE de daño si caés la distancia mínima (Ej: 10.0 = 10% de tu vida máxima)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Fall Damage")
-	float MinFallDamage = 10.f;
+	float MinFallDamagePercent = 10.f;
 
-	// Daño que recibís si caés la distancia máxima (100 para matar a un PJ con 100 de vida)
+	// PORCENTAJE de daño si caés la distancia máxima (Ej: 100.0 = Muerte instantánea)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Fall Damage")
-	float MaxFallDamage = 100.f;
+	float MaxFallDamagePercent = 100.f;
 
 	UFUNCTION()
 	void OnStaminaExhausted();
