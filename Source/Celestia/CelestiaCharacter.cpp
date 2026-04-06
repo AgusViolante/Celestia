@@ -22,6 +22,8 @@
 #include "Components/ProgressionComponent.h"
 #include "Components/StatsComponent.h"
 #include "Components/ManaComponent.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
 
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -144,6 +146,11 @@ void ACelestiaCharacter::BeginPlay()
 
 				PlayerHUDInstance->UpdateXP(ProgressionComponent->CurrentXP, ProgressionComponent->MaxXPForNextLevel);
 				PlayerHUDInstance->UpdateLevel(ProgressionComponent->CurrentLevel);
+
+				if (HasAuthority())
+				{
+					ProgressionComponent->OnLevelUp.AddDynamic(this, &ACelestiaCharacter::TriggerLevelUpVFX);
+				}
 			}
 		}
 	}
@@ -652,4 +659,26 @@ void ACelestiaCharacter::Debug_UseManaPotionInput()
 	TryUseManaPotion();
 }
 
+void ACelestiaCharacter::TriggerLevelUpVFX(int32 NewLevel)
+{
+	Multicast_PlayLevelUpVFX();
+}
+
+void ACelestiaCharacter::Multicast_PlayLevelUpVFX_Implementation()
+{
+	
+	if (LevelUpVFX && GetMesh())
+	{
+	
+		UNiagaraFunctionLibrary::SpawnSystemAttached(
+			LevelUpVFX,
+			GetMesh(),
+			NAME_None,
+			FVector(0.f, 0.f, 0.f), 
+			FRotator::ZeroRotator,
+			EAttachLocation::KeepRelativeOffset,
+			true
+		);
+	}
+}
 

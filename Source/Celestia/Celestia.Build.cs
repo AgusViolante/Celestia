@@ -16,6 +16,7 @@ public class Celestia : ModuleRules
             "Engine",
             "InputCore",
             "EnhancedInput",
+            "Niagara",
             "AIModule",
             "NavigationSystem",
             "StateTreeModule",

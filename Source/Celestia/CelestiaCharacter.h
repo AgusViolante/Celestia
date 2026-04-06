@@ -23,6 +23,7 @@ class UStaminaComponent;
 class UProgressionComponent;
 class UStatsComponent;
 class UManaComponent;
+class UNiagaraSystem;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
@@ -191,6 +192,16 @@ protected:
 
 	UFUNCTION(BlueprintCallable, Category = "Potion")
 	bool TryUseManaPotion(int32 NumPotions = 1);
+
+	// --- VFX DE LEVEL UP ---
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "VFX")
+	UNiagaraSystem* LevelUpVFX;
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multicast_PlayLevelUpVFX();
+
+	UFUNCTION()
+	void TriggerLevelUpVFX(int32 NewLevel);
 
 protected:
 

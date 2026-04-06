@@ -9,6 +9,7 @@ class UProgressBar;
 class UTextBlock;
 class UHealthComponent;
 class UStaminaComponent;
+class UNiagaraSystem;
 
 UCLASS()
 class CELESTIA_API UUIPlayerHUD : public UUserWidget
@@ -75,4 +76,5 @@ public:
 
 	UFUNCTION()
 	void UpdateLevel(int32 NewLevel);
+
 };
