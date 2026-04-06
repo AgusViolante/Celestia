@@ -137,6 +137,14 @@ void ACelestiaCharacter::BeginPlay()
 				PlayerHUDInstance->UpdateStat(ERPGStatType::Wisdom, StatsComponent->GetStatValue(ERPGStatType::Wisdom));
 				PlayerHUDInstance->UpdateStat(ERPGStatType::Endurance, StatsComponent->GetStatValue(ERPGStatType::Endurance));
 			}
+			if (ProgressionComponent)
+			{
+				ProgressionComponent->OnXPGained.AddDynamic(PlayerHUDInstance, &UUIPlayerHUD::UpdateXP);
+				ProgressionComponent->OnLevelUp.AddDynamic(PlayerHUDInstance, &UUIPlayerHUD::UpdateLevel);
+
+				PlayerHUDInstance->UpdateXP(ProgressionComponent->CurrentXP, ProgressionComponent->MaxXPForNextLevel);
+				PlayerHUDInstance->UpdateLevel(ProgressionComponent->CurrentLevel);
+			}
 		}
 	}
 
@@ -159,14 +167,6 @@ void ACelestiaCharacter::BeginPlay()
 	if (ProgressionComponent && StatsComponent)
 	{
 		ProgressionComponent->OnLevelUp.AddDynamic(StatsComponent, &UStatsComponent::OnLevelUp);
-	}
-	if (ProgressionComponent)
-	{
-		ProgressionComponent->OnXPGained.AddDynamic(PlayerHUDInstance, &UUIPlayerHUD::UpdateXP);
-		ProgressionComponent->OnLevelUp.AddDynamic(PlayerHUDInstance, &UUIPlayerHUD::UpdateLevel);
-
-		PlayerHUDInstance->UpdateXP(ProgressionComponent->CurrentXP, ProgressionComponent->MaxXPForNextLevel);
-		PlayerHUDInstance->UpdateLevel(ProgressionComponent->CurrentLevel);
 	}
 }
 void ACelestiaCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -403,21 +403,56 @@ void ACelestiaCharacter::Debug_UsePotionInput()
 }
 void ACelestiaCharacter::Sprinting()
 {
-	// Solo corremos si hay estamina disponible
 	if (StaminaComponent && StaminaComponent->HasEnoughStamina())
 	{
 		GetCharacterMovement()->MaxWalkSpeed = 1000.f;
 		StaminaComponent->StartDraining(StaminaComponent->SprintCostPerSecond);
+
+		if (!HasAuthority())
+		{
+			Server_SetSprinting(true);
+		}
 	}
 }
 
 void ACelestiaCharacter::StopSprinting()
 {
 	GetCharacterMovement()->MaxWalkSpeed = 500.f;
-
 	if (StaminaComponent)
 	{
 		StaminaComponent->StopDraining();
+	}
+
+	if (!HasAuthority())
+	{
+		Server_SetSprinting(false);
+	}
+}
+
+bool ACelestiaCharacter::Server_SetSprinting_Validate(bool bIsSprinting)
+{
+	return true; 
+}
+
+void ACelestiaCharacter::Server_SetSprinting_Implementation(bool bIsSprinting)
+{
+	
+	if (bIsSprinting)
+	{
+		
+		if (StaminaComponent && StaminaComponent->HasEnoughStamina())
+		{
+			GetCharacterMovement()->MaxWalkSpeed = 1000.f;
+			StaminaComponent->StartDraining(StaminaComponent->SprintCostPerSecond);
+		}
+	}
+	else
+	{
+		GetCharacterMovement()->MaxWalkSpeed = 500.f;
+		if (StaminaComponent)
+		{
+			StaminaComponent->StopDraining();
+		}
 	}
 }
 

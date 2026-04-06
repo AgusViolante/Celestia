@@ -98,8 +98,6 @@ public:
 	/** Constructor */
 	ACelestiaCharacter();
 
-	//Interface
-
 
 	//Componentes
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Components")
@@ -134,7 +132,7 @@ public:
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Components")
 	UStaminaComponent* StaminaComponent;
 
-	// Función que se ejecuta al apretar la 'E'
+//E input
 	void OnInteractInput();
 
 	UFUNCTION(Server, Reliable, WithValidation)
@@ -225,6 +223,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category="Input")
 	virtual void StopSprinting();
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_SetSprinting(bool bIsSprinting);
 
 	virtual void Tick(float DeltaTime) override;
 
