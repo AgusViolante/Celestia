@@ -7,6 +7,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "AI/EnemyAIController.h"
+#include "Engine/Engine.h"
 
 AEnemyBase::AEnemyBase()
 {
@@ -35,7 +36,7 @@ void AEnemyBase::BeginPlay()
 		Capsule->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		Capsule->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
 		Capsule->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
-		Capsule->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+		
 	}
 	if (GetMesh())
 	{
@@ -49,11 +50,31 @@ void AEnemyBase::BeginPlay()
 
 }
 
+float AEnemyBase::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
+{
+	
+	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+
+	if (bAlreadyDied || ActualDamage <= 0.0f)
+	{
+		return 0.0f;
+	}
+
+	if (HealthComponent)
+	{
+		HealthComponent->TakeDamage(ActualDamage);
+	}
+
+	return ActualDamage;
+}
+
 void AEnemyBase::OnHealthComponentDeath(AActor* DeadOwner)
 {
 	Die_Implementation();
 	OnDeath.Broadcast(this);
 }
+
 
 void AEnemyBase::Die_Implementation()
 {
