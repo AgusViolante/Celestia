@@ -110,13 +110,12 @@ void AEnemyBase::Die_Implementation()
 
 void AEnemyBase::SpawnPotionDrop()
 {
-	if (!PotionDropClass || DropChance <= 0.0f || FMath::FRand() > DropChance) return;
-
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
 	SpawnParams.Instigator = GetInstigator();
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-	FVector SpawnLocation = GetActorLocation() + FVector(0.f, 0.f, -75.f);
-	GetWorld()->SpawnActor<AActor>(PotionDropClass, SpawnLocation, FRotator::ZeroRotator, SpawnParams);
+	FVector SpawnLocation = GetActorLocation() + FVector(0.f, 0.f, -30.f);
+	AActor* SpawnedPotion = GetWorld()->SpawnActor<AActor>(PotionDropClass, SpawnLocation, FRotator::ZeroRotator, SpawnParams);
+
 }
