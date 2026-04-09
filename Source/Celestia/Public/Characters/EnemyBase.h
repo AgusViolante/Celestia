@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Interfaces/DeathInterface.h"
+#include "EnemyTypes.h"
 #include "EnemyBase.generated.h"
 
 class UHealthComponent;
@@ -52,6 +53,9 @@ public:
 	TArray<ATargetPoint*> PatrolPoints;
 
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Enemy | State")
+	EEnemyClassType EnemyType;
 
 protected:
 	virtual void BeginPlay() override;

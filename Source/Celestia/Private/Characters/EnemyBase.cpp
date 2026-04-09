@@ -25,6 +25,8 @@ AEnemyBase::AEnemyBase()
 
 	AIControllerClass = AEnemyAIController::StaticClass();
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+
+	EnemyType = EEnemyClassType::Melee;
 }
 
 void AEnemyBase::BeginPlay()

@@ -5,6 +5,8 @@
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
 #include "../CelestiaCharacter.h" 
+#include "Characters/EnemyTypes.h"
+#include "Characters/EnemyBase.h"
 
 AEnemyAIController::AEnemyAIController()
 {
@@ -41,6 +43,14 @@ void AEnemyAIController::OnPossess(APawn* InPawn)
     if (BehaviorTreeAsset)
     {
         RunBehaviorTree(BehaviorTreeAsset);
+        if (AEnemyBase* Enemy = Cast<AEnemyBase>(InPawn))
+        {
+            if (UBlackboardComponent* BB = GetBlackboardComponent())
+            {
+                BB->SetValueAsEnum(FName("EnemyClass"), static_cast<uint8>(Enemy->EnemyType));
+            }
+        }
+
     }
 }
 
