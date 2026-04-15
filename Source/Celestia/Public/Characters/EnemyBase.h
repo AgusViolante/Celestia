@@ -57,6 +57,16 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Enemy | State")
 	EEnemyClassType EnemyType;
 
+	// --- SISTEMA DE EXPERIENCIA ---
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enemy | Progression")
+	int32 EnemyLevel = 1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enemy | Progression")
+	float BaseXPReward = 50.0f;
+
+	UFUNCTION(BlueprintCallable, Category = "Enemy | Progression")
+	float CalculateXPReward() const;
+
 protected:
 	virtual void BeginPlay() override;
 

@@ -7,6 +7,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "AI/EnemyAIController.h"
+#include "Kismet/GameplayStatics.h"
+#include "Components/ProgressionComponent.h"
 #include "Engine/Engine.h"
 
 AEnemyBase::AEnemyBase()
@@ -93,6 +95,21 @@ void AEnemyBase::Die_Implementation()
 		Con->UnPossess();
 	}
 
+	if (ACharacter* PlayerChar = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0))
+	{
+		if (UProgressionComponent* PlayerProg = PlayerChar->FindComponentByClass<UProgressionComponent>())
+		{
+			float XPToGive = CalculateXPReward();
+			PlayerProg->AddXP(XPToGive);
+
+			// Opcional: Mostrar en pantalla cuánta XP ganaste
+			if (GEngine)
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Cyan, FString::Printf(TEXT("+%.0f XP"), XPToGive));
+			}
+		}
+	}
+
 	float MontageLength = 1.0f;
 	UAnimInstance* AnimInst = (GetMesh() ? GetMesh()->GetAnimInstance() : nullptr);
 
@@ -120,4 +137,25 @@ void AEnemyBase::SpawnPotionDrop()
 	FVector SpawnLocation = GetActorLocation() + FVector(0.f, 0.f, -30.f);
 	AActor* SpawnedPotion = GetWorld()->SpawnActor<AActor>(PotionDropClass, SpawnLocation, FRotator::ZeroRotator, SpawnParams);
 
+}
+
+float AEnemyBase::CalculateXPReward() const
+{
+	float TypeMultiplier = 1.0f;
+
+	switch (EnemyType)
+	{
+	case EEnemyClassType::Melee:
+		TypeMultiplier = 1.0f; // Multiplicador normal
+		break;
+	case EEnemyClassType::Ranged:
+		TypeMultiplier = 1.2f; // Los de rango dan un 20% más por ser molestos
+		break;
+	case EEnemyClassType::Boss:
+		TypeMultiplier = 5.0f; // Los jefes dan muchísima más XP
+		break;
+	}
+
+	// Formula: XP Base * Nivel del Enemigo * Multiplicador de Tipo
+	return BaseXPReward * EnemyLevel * TypeMultiplier;
 }

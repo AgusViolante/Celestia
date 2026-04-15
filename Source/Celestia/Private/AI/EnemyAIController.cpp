@@ -36,33 +36,45 @@ void AEnemyAIController::OnPossess(APawn* InPawn)
 {
     Super::OnPossess(InPawn);
 
-    // Conectamos nuestros "ojos" a la función que escribimos
+    
     EnemyPerceptionComp->OnTargetPerceptionUpdated.AddDynamic(this, &AEnemyAIController::OnTargetDetected);
 
-    // Si le asignamos un Behavior Tree en el editor, lo arrancamos
-    if (BehaviorTreeAsset)
+    if (AEnemyBase* Enemy = Cast<AEnemyBase>(InPawn))
     {
-        RunBehaviorTree(BehaviorTreeAsset);
-        if (AEnemyBase* Enemy = Cast<AEnemyBase>(InPawn))
+      
+        if (Enemy->EnemyType == EEnemyClassType::Ranged)
         {
+            SightConfig->SightRadius = 1500.f; 
+            SightConfig->LoseSightRadius = 2000.f;
+        }
+        else 
+        {
+            SightConfig->SightRadius = 800.f; 
+            SightConfig->LoseSightRadius = 1200.f;
+        }
+
+        
+        EnemyPerceptionComp->ConfigureSense(*SightConfig);
+
+        if (BehaviorTreeAsset)
+        {
+            RunBehaviorTree(BehaviorTreeAsset);
+
             if (UBlackboardComponent* BB = GetBlackboardComponent())
             {
                 BB->SetValueAsEnum(FName("EnemyClass"), static_cast<uint8>(Enemy->EnemyType));
             }
         }
-
     }
 }
 
 void AEnemyAIController::OnTargetDetected(AActor* Actor, FAIStimulus Stimulus)
 {
-    // Solo nos importa si lo que vimos es el Jugador
+    
     if (ACelestiaCharacter* Player = Cast<ACelestiaCharacter>(Actor))
     {
         if (Stimulus.WasSuccessfullySensed())
         {
-            // EL ENEMIGO NOS VIO
-            // Aquí le avisaremos al Blackboard en el futuro
             if (GetBlackboardComponent())
             {
                 GetBlackboardComponent()->SetValueAsObject(FName("TargetActor"), Player);
@@ -71,7 +83,7 @@ void AEnemyAIController::OnTargetDetected(AActor* Actor, FAIStimulus Stimulus)
         }
         else
         {
-            // EL ENEMIGO NOS PERDIÓ DE VISTA
+            
             if (GetBlackboardComponent())
             {
                 GetBlackboardComponent()->ClearValue(FName("TargetActor"));
