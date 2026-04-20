@@ -102,7 +102,7 @@ void AEnemyBase::Die_Implementation()
 			float XPToGive = CalculateXPReward();
 			PlayerProg->AddXP(XPToGive);
 
-			// Opcional: Mostrar en pantalla cuánta XP ganaste
+			//Mostrar en pantalla cuanta xp ganaste
 			if (GEngine)
 			{
 				GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Cyan, FString::Printf(TEXT("+%.0f XP"), XPToGive));
