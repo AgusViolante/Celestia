@@ -119,5 +119,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Stats | Progression")
 	void OnLevelUp(int32 NewLevel);
 
+	UFUNCTION(BlueprintPure, Category = "Stats | Logic")
 	float GetStatValue(ERPGStatType StatType) const;
 };
