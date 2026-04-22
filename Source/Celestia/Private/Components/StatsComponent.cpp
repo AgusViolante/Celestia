@@ -152,4 +152,4 @@ float UStatsComponent::GetStatValue(ERPGStatType StatType) const
 	case ERPGStatType::MagicCrit: return MagicCrit.GetTotal();
 	default: return 0.0f;
 	}
-}
+} 
