@@ -5,6 +5,7 @@
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
 #include "../CelestiaCharacter.h" 
+#include "Components/ProgressionComponent.h"
 #include "Characters/EnemyTypes.h"
 #include "Characters/EnemyBase.h"
 
@@ -73,22 +74,52 @@ void AEnemyAIController::OnTargetDetected(AActor* Actor, FAIStimulus Stimulus)
     
     if (ACelestiaCharacter* Player = Cast<ACelestiaCharacter>(Actor))
     {
+        if (AEnemyBase* ControlledEnemy = Cast<AEnemyBase>(GetPawn()))
+        {
+            if (UProgressionComponent* PlayerProg = Player->FindComponentByClass<UProgressionComponent>())
+            {
+                
+                int32 PlayerLevel = PlayerProg->CurrentLevel;
+                int32 EnemyLvl = ControlledEnemy->EnemyLevel;
+
+                
+                if (PlayerLevel >= EnemyLvl + 2)
+                {
+                    
+                    return;
+                }
+            }
+        }
+
         if (Stimulus.WasSuccessfullySensed())
         {
             if (GetBlackboardComponent())
             {
                 GetBlackboardComponent()->SetValueAsObject(FName("TargetActor"), Player);
             }
-            UE_LOG(LogTemp, Warning, TEXT("El enemigo vio al jugador!"));
+            UE_LOG(LogTemp, Warning, TEXT("El enemigo vio al jugador"));
         }
         else
         {
-            
-            if (GetBlackboardComponent())
+
+            if (!bHasAggro && GetBlackboardComponent())
             {
                 GetBlackboardComponent()->ClearValue(FName("TargetActor"));
+                UE_LOG(LogTemp, Warning, TEXT("El enemigo perdio al jugador por distancia"));
             }
-            UE_LOG(LogTemp, Warning, TEXT("El enemigo perdio al jugador!"));
         }
     }
+}
+
+void AEnemyAIController::ReceiveDamageAggro(AActor* Attacker)
+{
+    // Si nos atacaron y tenemos Blackboard, fija el objetivo
+    if (Attacker && GetBlackboardComponent())
+    {
+        bHasAggro = true;
+        GetBlackboardComponent()->SetValueAsObject(FName("TargetActor"), Attacker);
+
+        UE_LOG(LogTemp, Warning, TEXT("Aggro activado por danio desde lejos"));
+    }
+
 }

@@ -60,4 +60,7 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "Spawner")
     void SpawnAtIndex(int32 Index);
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawner | Configuration")
+    int32 LevelToSpawn = 1;
 };

@@ -50,20 +50,26 @@ void AEnemySpawner::SpawnEnemyAtIndex(int32 SpawnIndex)
 
     const FTransform SpawnTransform = SpawnPoints[SpawnIndex]->GetActorTransform();
 
-    FActorSpawnParameters Params;
-    Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+    AEnemyBase* NewEnemy = W->SpawnActorDeferred<AEnemyBase>(
+        EnemyClass,
+        SpawnTransform,
+        this,
+        nullptr,
+        ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn
+    );
 
-    // Spawneamos usando la nueva base
-    AEnemyBase* NewEnemy = W->SpawnActor<AEnemyBase>(EnemyClass, SpawnTransform, Params);
     if (!NewEnemy)
     {
-        UE_LOG(LogTemp, Warning, TEXT("EnemySpawner: Failed to spawn at index %d"), SpawnIndex);
+        UE_LOG(LogTemp, Warning, TEXT("EnemySpawner: fallo%d"), SpawnIndex);
         return;
     }
 
-    // Solo le pasamos los puntos, el Behavior Tree se encargará del radio y el tiempo
+    // Solo pasamos los puntos
+    NewEnemy->EnemyLevel = LevelToSpawn;
     NewEnemy->PatrolPoints = PatrolPointsToAssign;
     NewEnemy->bAlreadyDied = false;
+
+    UGameplayStatics::FinishSpawningActor(NewEnemy, SpawnTransform);
 
     if (NewEnemy->HealthComponent)
     {

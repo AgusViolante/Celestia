@@ -58,7 +58,7 @@ public:
 	EEnemyClassType EnemyType;
 
 	// --- SISTEMA DE EXPERIENCIA ---
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enemy | Progression")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enemy | Progression", meta = (ExposeOnSpawn = "true"))
 	int32 EnemyLevel = 1;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enemy | Progression")

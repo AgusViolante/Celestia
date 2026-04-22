@@ -1,5 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 #include "Components/ManaComponent.h"
+#include "Components/ProgressionComponent.h"
 #include "Math/UnrealMathUtility.h"
 
 UManaComponent::UManaComponent()
@@ -13,21 +14,42 @@ UManaComponent::UManaComponent()
 void UManaComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	// Eliminamos el SetTimer, ya no hay regeneración pasiva
+	
 }
 
-bool UManaComponent::TryConsumeMana(float Cost)
+float UManaComponent::CalculateDynamicCost(float BaseCost, float Multiplier) const
 {
-	if (CurrentMana >= Cost)
+	float FinalCost = BaseCost;
+
+	
+	if (AActor* MyOwner = GetOwner())
 	{
-		CurrentMana -= Cost;
+		if (UProgressionComponent* ProgComp = MyOwner->FindComponentByClass<UProgressionComponent>())
+		{
+			
+			int32 PlayerLevel = ProgComp->CurrentLevel;
+			FinalCost = BaseCost + (PlayerLevel * Multiplier);
+		}
+	}
+
+	return FinalCost;
+}
+
+bool UManaComponent::TryConsumeDynamicMana(float BaseCost, float LevelMultiplier)
+{
+	
+	float ActualCost = CalculateDynamicCost(BaseCost, LevelMultiplier);
+
+	if (CurrentMana >= ActualCost)
+	{
+		CurrentMana -= ActualCost;
 		OnManaChanged.Broadcast(CurrentMana, MaxMana);
 		return true;
 	}
 
+
 	return false;
 }
-
 void UManaComponent::RestoreMana(float Amount)
 {
 	CurrentMana = FMath::Clamp(CurrentMana + Amount, 0.0f, MaxMana);
@@ -36,22 +58,21 @@ void UManaComponent::RestoreMana(float Amount)
 
 void UManaComponent::UpdateMaxMana(float NewMaxMana)
 {
-	// 1. Calculamos cuánta maná extra estamos ganando por la Inteligencia
+	
 	float ManaDifference = NewMaxMana - MaxMana;
 
-	// 2. Actualizamos el límite
+	
 	MaxMana = NewMaxMana;
 
-	// 3. Le sumamos esa misma diferencia a la maná actual para dar el salto instantáneo
+	
 	if (ManaDifference > 0.0f)
 	{
 		CurrentMana += ManaDifference;
 	}
 
-	// Aseguramos que no se pase del límite
 	CurrentMana = FMath::Clamp(CurrentMana, 0.0f, MaxMana);
 
-	// 4. Disparamos el evento para que la barra azul de la UI se actualice de golpe
+	
 	OnManaChanged.Broadcast(CurrentMana, MaxMana);
 }
 

@@ -64,7 +64,18 @@ float AEnemyBase::TakeDamage(float DamageAmount, struct FDamageEvent const& Dama
 	{
 		return 0.0f;
 	}
+	if (AEnemyAIController* AICon = Cast<AEnemyAIController>(GetController()))
+	{
+		if (EventInstigator && EventInstigator->GetPawn())
+		{
+			AICon->ReceiveDamageAggro(EventInstigator->GetPawn());
+		}
 
+		else if (DamageCauser)
+		{
+			AICon->ReceiveDamageAggro(DamageCauser);
+		}
+	}
 	if (HealthComponent)
 	{
 		HealthComponent->TakeDamage(ActualDamage);

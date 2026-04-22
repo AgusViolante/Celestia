@@ -18,6 +18,9 @@ class CELESTIA_API AEnemyAIController : public AAIController
 public:
     AEnemyAIController();
 
+    UFUNCTION(BlueprintCallable, Category = "AI | Logic")
+    void ReceiveDamageAggro(AActor* Attacker);
+
 protected:
     virtual void OnPossess(APawn* InPawn) override;
 
@@ -35,4 +38,7 @@ protected:
     // Función que se dispara cuando el enemigo VE o DEJA DE VER algo
     UFUNCTION()
     void OnTargetDetected(AActor* Actor, FAIStimulus Stimulus);
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI | Logic")
+    bool bHasAggro = false;
 };

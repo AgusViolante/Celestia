@@ -28,8 +28,11 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Mana | Events")
 	FOnManaChangedSignature OnManaChanged;
 
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Mana")
+	float CalculateDynamicCost(float BaseCost, float Multiplier) const;
+
 	UFUNCTION(BlueprintCallable, Category = "Mana")
-	bool TryConsumeMana(float Cost);
+	bool TryConsumeDynamicMana(float BaseCost, float LevelMultiplier);
 
 	UFUNCTION(BlueprintCallable, Category = "Mana")
 	void RestoreMana(float Amount);
