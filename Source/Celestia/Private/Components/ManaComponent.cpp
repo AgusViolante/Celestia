@@ -7,7 +7,7 @@ UManaComponent::UManaComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 
-	MaxMana = 50.0f;
+	MaxMana = 100.0f;
 	CurrentMana = MaxMana;
 }
 
