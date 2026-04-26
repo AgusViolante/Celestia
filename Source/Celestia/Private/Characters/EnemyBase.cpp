@@ -273,34 +273,31 @@ void AEnemyBase::ReleaseStun()
 
 	bIsStunned = false;
 
-	// 1. Devolver movimiento
+	
 	if (GetCharacterMovement())
 	{
 		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 	}
 
-	// 2. REANUDAR Y REINICIAR CEREBRO
 	if (AAIController* AIC = Cast<AAIController>(GetController()))
 	{
 		if (UBrainComponent* BrainComp = AIC->GetBrainComponent())
 		{
-			// En lugar de Resume, a veces es mejor Restart si ves que se queda tonto
+			
 			BrainComp->ResumeLogic("Stunned");
 		}
 
-		// --- EL TRUCO CLAVE: Forzar Aggro ---
-		// Buscamos al jugador manualmente al despertar por si la percepción falló
 		ACharacter* PlayerChar = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
 		if (PlayerChar)
 		{
-			// Accedemos al Blackboard para decirle: "¡Hey, el jugador sigue ahí!"
+			
 			if (UBlackboardComponent* BB = AIC->GetBlackboardComponent())
 			{
-				// Asegúrate de que "TargetActor" sea el nombre exacto de tu variable en el Blackboard
+				
 				BB->SetValueAsObject(TEXT("TargetActor"), PlayerChar);
 			}
 
-			// Si tienes una función de Aggro en tu AI Controller, llámala
+			
 			if (AEnemyAIController* MyAIC = Cast<AEnemyAIController>(AIC))
 			{
 				MyAIC->ReceiveDamageAggro(PlayerChar);
