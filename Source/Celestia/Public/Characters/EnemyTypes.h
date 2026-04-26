@@ -10,5 +10,6 @@ enum class EEnemyClassType : uint8
 {
     Melee   UMETA(DisplayName = "Melee"),
     Ranged  UMETA(DisplayName = "Ranged"),
-    Boss    UMETA(DisplayName = "Boss")
+    Boss    UMETA(DisplayName = "Boss"),
+    Tank    UMETA(DisplayName = "Tank")
 };

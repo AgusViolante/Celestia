@@ -1,5 +1,6 @@
 #include "Components/HealthComponent.h"
 #include "Components/StatsComponent.h"
+#include "Interfaces/StunnableInterface.h"
 #include "Interfaces/DeathInterface.h"
 #include "Characters/EnemyBase.h"
 #include "../../CelestiaCharacter.h"
@@ -49,7 +50,7 @@ void UHealthComponent::BeginPlay()
     InitializeAfterSpawn(bAutoRegen, RegenDelaySeconds, RegenPerSecond, RegenTickInterval);
 }
 
-void UHealthComponent::TakeDamage(float Amount, bool bIgnoreDefense)
+void UHealthComponent::TakeDamage(float Amount, bool bIsCritical, bool bIgnoreDefense)
 {
     if (Amount <= 0.f) return;
     if (IsDead()) return;
@@ -64,14 +65,30 @@ void UHealthComponent::TakeDamage(float Amount, bool bIgnoreDefense)
             // Buscamos si el que recibe daño tiene Stats (el jugador lo tiene, los enemigos normales tal vez no)
             if (UStatsComponent* StatsComp = OwnerActor->FindComponentByClass<UStatsComponent>())
             {
+                // Por ahora usamos MeleeDefense como defensa general
                 float Defense = StatsComp->GetStatValue(ERPGStatType::MeleeDefense);
 
-                // Fórmula: Daño Final = Daño Base - Defensa (Nunca menor a 1.0f)
-                FinalDamage = FMath::Max(1.0f, Amount - Defense);
+                // Evitamos divisiones por cero o números negativos en caso de bugs
+                Defense = FMath::Max(0.0f, Defense);
+
+                // Fórmula: Multiplicador porcentual
+                float MitigationMultiplier = 100.0f / (100.0f + Defense);
+                FinalDamage = Amount * MitigationMultiplier;
             }
         }
     }
 
+    if (bIsCritical)
+    {
+        AActor* Owner = GetOwner();
+        
+
+        if (Owner && Owner->Implements<UStunnableInterface>())
+        {
+     
+            IStunnableInterface::Execute_ApplyStun(Owner, 2.0f);
+        }
+    }
     Health = FMath::Clamp(Health - FinalDamage, 0.f, MaxHealth);
 
     OnHealthChanged.Broadcast(this, Health, MaxHealth, -FinalDamage);
@@ -192,4 +209,5 @@ bool UHealthComponent::IsRegenTimerActive() const
 
         return TEXT("Otro");
     }
+    
 

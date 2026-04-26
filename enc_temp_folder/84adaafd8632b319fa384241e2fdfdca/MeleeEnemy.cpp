@@ -66,8 +66,7 @@ void AMeleeEnemy::StopDamage()
 
 void AMeleeEnemy::ApplyDamage()
 {
-	if (!DamageTarget || bIsStunned) return;
-
+	if (!DamageTarget) return;
 
 	if (UHealthComponent* TargetHealthComp = DamageTarget->FindComponentByClass<UHealthComponent>())
 	{

@@ -43,7 +43,7 @@ public:
     FOnHealthChangedSignature OnHealthChanged;
 
     UFUNCTION(BlueprintCallable, Category = "Health")
-    void TakeDamage(float Amount, bool bIgnoreDefense = false);
+    void TakeDamage(float Amount, bool bIsCritical = false, bool bIgnoreDefense = false);
 
     UFUNCTION(BlueprintCallable, Category="Health")
     void Heal(float Amount);

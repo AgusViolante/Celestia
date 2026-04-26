@@ -228,6 +228,7 @@ void ACelestiaCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 
 void ACelestiaCharacter::Move(const FInputActionValue& Value)
 {
+	if (bIsStunned) return;
 	// input is a Vector2D
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
@@ -246,6 +247,7 @@ void ACelestiaCharacter::Look(const FInputActionValue& Value)
 
 void ACelestiaCharacter::DoMove(float Right, float Forward)
 {
+	if (bIsStunned) return;
 	if (GetController() != nullptr)
 	{
 		// find out which way is forward
@@ -276,6 +278,7 @@ void ACelestiaCharacter::DoLook(float Yaw, float Pitch)
 
 void ACelestiaCharacter::DoJumpStart()
 {
+	if (bIsStunned) return;
 	// signal the character to jump
 	Jump();
 }
@@ -526,6 +529,7 @@ void ACelestiaCharacter::Tick(float DeltaTime)
 		// Si estamos pisando suelo firme, anclamos el registro a nuestra altura actual
 		MaxZHeightDuringFall = GetActorLocation().Z;
 	}
+
 }
 
 void ACelestiaCharacter::Landed(const FHitResult& Hit)
@@ -680,5 +684,58 @@ void ACelestiaCharacter::Multicast_PlayLevelUpVFX_Implementation()
 			true
 		);
 	}
+}
+
+void ACelestiaCharacter::ApplyStun_Implementation(float Duration)
+{
+	if (bIsStunned) return;
+
+	bIsStunned = true;
+
+	if (GetCharacterMovement())
+	{
+		GetCharacterMovement()->DisableMovement();
+		GetCharacterMovement()->StopMovementImmediately();
+	}
+
+	if (StunMontage)
+	{
+		PlayAnimMontage(StunMontage);
+	}
+
+	if (StunVFX && GetMesh())
+	{
+
+		FRotator Rotation = FRotator(90.f, 0.f, 0.f);
+
+		ActiveStunVFX = UNiagaraFunctionLibrary::SpawnSystemAttached(
+			StunVFX,
+			GetMesh(),
+			TEXT("head"), 
+			FVector(0.f, 0.f, 20.f),
+			Rotation,
+			EAttachLocation::KeepRelativeOffset,
+			true
+		);
+	}
+
+
+	GetWorldTimerManager().SetTimer(StunTimerHandle, this, &ACelestiaCharacter::ReleaseStun, Duration, false);
+}
+
+void ACelestiaCharacter::ReleaseStun()
+{
+	bIsStunned = false;
+
+	if (GetCharacterMovement())
+	{
+		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+	}
+	if (ActiveStunVFX)
+	{
+		ActiveStunVFX->DestroyComponent();
+		ActiveStunVFX = nullptr;
+	}
+	OnStunEnded();
 }
 

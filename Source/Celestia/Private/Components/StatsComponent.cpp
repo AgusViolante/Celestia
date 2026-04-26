@@ -49,7 +49,7 @@ void UStatsComponent::RecalculateDerivedStats()
 	OnStatChanged.Broadcast(ERPGStatType::MagicDefense, MagicDefense.GetTotal());
 
 	// Críticos
-	MeleeCrit.BaseValue = Dexterity.GetTotal() * 0.5f;
+	MeleeCrit.BaseValue = 100.0f;
 	OnStatChanged.Broadcast(ERPGStatType::MeleeCrit, MeleeCrit.GetTotal());
 
 	MagicCrit.BaseValue = Wisdom.GetTotal() * 0.5f;
@@ -153,3 +153,14 @@ float UStatsComponent::GetStatValue(ERPGStatType StatType) const
 	default: return 0.0f;
 	}
 } 
+void UStatsComponent::SetPrimaryStats(float NewStr, float NewDex, float NewInt, float NewWis, float NewEnd)
+{
+	Strength.BaseValue = NewStr;
+	Dexterity.BaseValue = NewDex;
+	Intelligence.BaseValue = NewInt;
+	Wisdom.BaseValue = NewWis;
+	Endurance.BaseValue = NewEnd;
+
+	
+	RecalculateDerivedStats();
+}

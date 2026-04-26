@@ -69,6 +69,8 @@ void AEnemySpawner::SpawnEnemyAtIndex(int32 SpawnIndex)
     NewEnemy->PatrolPoints = PatrolPointsToAssign;
     NewEnemy->bAlreadyDied = false;
 
+    NewEnemy->InitializeEnemyStats();
+
     UGameplayStatics::FinishSpawningActor(NewEnemy, SpawnTransform);
 
     if (NewEnemy->HealthComponent)

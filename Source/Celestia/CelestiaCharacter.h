@@ -7,6 +7,7 @@
 #include "Logging/LogMacros.h"
 #include "Components/StatsComponent.h"
 #include "Interfaces/I_PickUp.h"
+#include "Interfaces/StunnableInterface.h"
 
 
 
@@ -24,6 +25,7 @@ class UProgressionComponent;
 class UStatsComponent;
 class UManaComponent;
 class UNiagaraSystem;
+class UNiagaraComponent;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
@@ -31,7 +33,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
 
 UCLASS(abstract)
-class CELESTIA_API ACelestiaCharacter : public ACharacter, public II_PickUp
+class CELESTIA_API ACelestiaCharacter : public ACharacter, public II_PickUp, public IStunnableInterface
 {
 	GENERATED_BODY()
 
@@ -141,6 +143,10 @@ public:
 
 	virtual void ReceiveItem_Implementation(int32 Amount, const FString& ItemName) override;
 
+	virtual void ApplyStun_Implementation(float Duration) override;
+
+	UFUNCTION(BlueprintPure, Category = "Abilities | Stun")
+	bool IsStunned() const { return bIsStunned; }
 
 protected:
 	virtual void BeginPlay() override;
@@ -202,6 +208,28 @@ protected:
 
 	UFUNCTION()
 	void TriggerLevelUpVFX(int32 NewLevel);
+
+	// --- VARIABLES DE STUN ---
+	UPROPERTY(EditAnywhere, Category = "Abilities | Stun")
+	UAnimMontage* StunMontage;
+
+	FTimerHandle StunTimerHandle;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities | Stun")
+	bool bIsStunned = false;
+
+	UPROPERTY(EditAnywhere, Category = "Abilities | Stun")
+	UNiagaraSystem* StunVFX; 
+
+	UPROPERTY()
+	class UNiagaraComponent* ActiveStunVFX;
+
+	// --- FUNCION DE LIBERACION ---
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Abilities | Stun")
+	void OnStunEnded();
+
+	void ReleaseStun();
 
 protected:
 

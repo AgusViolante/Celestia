@@ -121,4 +121,7 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Stats | Logic")
 	float GetStatValue(ERPGStatType StatType) const;
+
+	UFUNCTION(BlueprintCallable, Category = "Stats | Logic")
+	void SetPrimaryStats(float NewStr, float NewDex, float NewInt, float NewWis, float NewEnd);
 };

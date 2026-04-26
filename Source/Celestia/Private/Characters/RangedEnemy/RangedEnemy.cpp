@@ -2,6 +2,7 @@
 
 
 #include "Characters/RangedEnemy/RangedEnemy.h"
+#include "Components/StatsComponent.h"
 #include "Characters/RangedEnemy/MagicProjectile.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -32,18 +33,15 @@ void ARangedEnemy::FireMagic()
 {
 	if (!ProjectileClass || bAlreadyDied) return;
 
-	FVector ForwardOffset = GetActorForwardVector() * 100.f; // 1 metro hacia adelante
+	FVector ForwardOffset = GetActorForwardVector() * 100.f;
 	FVector SpawnLocation = GetMesh()->GetSocketLocation(MuzzleSocketName) + ForwardOffset;
-
 
 	FRotator SpawnRotation = GetActorRotation();
 
 	ACharacter* PlayerChar = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
 	if (PlayerChar)
 	{
-		
 		FVector TargetLocation = PlayerChar->GetActorLocation();
-
 		SpawnRotation = UKismetMathLibrary::FindLookAtRotation(SpawnLocation, TargetLocation);
 	}
 
@@ -57,5 +55,28 @@ void ARangedEnemy::FireMagic()
 	if (SpawnedProj)
 	{
 		SpawnedProj->CollisionComp->IgnoreActorWhenMoving(this, true);
+
+		if (StatsComponent)
+		{
+		
+			float FinalMagicDamage = StatsComponent->GetStatValue(ERPGStatType::MagicAttack);
+
+		
+			float CritChance = StatsComponent->GetStatValue(ERPGStatType::MagicCrit);
+			float RandomRoll = FMath::RandRange(0.0f, 100.0f);
+
+			if (RandomRoll <= CritChance)
+			{
+				FinalMagicDamage *= 1.5f; 
+
+				if (GEngine)
+				{
+					GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Purple, TEXT("¡El Enemigo lanzó un HECHIZO CRÍTICO!"));
+				}
+			}
+
+			
+			SpawnedProj->DamageAmount = FinalMagicDamage;
+		}
 	}
 }

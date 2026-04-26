@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Interfaces/DeathInterface.h"
+#include "Interfaces/StunnableInterface.h"
 #include "EnemyTypes.h"
 #include "EnemyBase.generated.h"
 
@@ -15,7 +16,7 @@ class ATargetPoint;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FEnemyDeathSignature, AEnemyBase*, Enemy);
 
 UCLASS()
-class CELESTIA_API AEnemyBase : public ACharacter, public IDeathInterface
+class CELESTIA_API AEnemyBase : public ACharacter, public IDeathInterface, public IStunnableInterface
 {
 	GENERATED_BODY()
 
@@ -67,6 +68,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Enemy | Progression")
 	float CalculateXPReward() const;
 
+	UFUNCTION(BlueprintCallable, Category = "Enemy | Stats")
+	void InitializeEnemyStats();
+
+	virtual void ApplyStun_Implementation(float Duration) override;
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -75,4 +81,15 @@ protected:
 
 	UFUNCTION()
 	void SpawnPotionDrop();
+
+	void ReleaseStun();
+
+	FTimerHandle StunTimerHandle;
+
+	bool bIsStunned = false;
+	UPROPERTY(EditAnywhere, Category = "Combat | Stun")
+	class UNiagaraSystem* StunVFX;
+
+	UPROPERTY()
+	class UNiagaraComponent* ActiveStunVFX;
 };
