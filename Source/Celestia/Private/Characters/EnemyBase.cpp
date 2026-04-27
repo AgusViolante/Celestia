@@ -259,7 +259,7 @@ void AEnemyBase::ApplyStun_Implementation(float Duration)
 	{
 		ActiveStunVFX = UNiagaraFunctionLibrary::SpawnSystemAttached(
 			StunVFX, GetMesh(), NAME_None,
-			FVector(0.f, 0.f, 100.f), FRotator::ZeroRotator,
+			FVector(0.f, 0.f, StunVFXHeightOffset), FRotator::ZeroRotator,
 			EAttachLocation::KeepRelativeOffset, true
 		);
 	}
@@ -293,6 +293,9 @@ void AEnemyBase::ReleaseStun()
 			
 			if (UBlackboardComponent* BB = AIC->GetBlackboardComponent())
 			{
+				
+				BB->ClearValue(TEXT("TargetActor"));
+
 				
 				BB->SetValueAsObject(TEXT("TargetActor"), PlayerChar);
 			}

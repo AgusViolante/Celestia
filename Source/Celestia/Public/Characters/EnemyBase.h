@@ -92,4 +92,7 @@ protected:
 
 	UPROPERTY()
 	class UNiagaraComponent* ActiveStunVFX;
+
+	UPROPERTY(EditAnywhere, Category = "Combat | Stun")
+	float StunVFXHeightOffset = 100.0f;
 };

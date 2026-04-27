@@ -16,6 +16,8 @@ AMeleeEnemy::AMeleeEnemy()
 	DamageSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	DamageSphere->SetCollisionResponseToAllChannels(ECR_Ignore);
 	DamageSphere->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+
+	StunVFXHeightOffset = 180.0f;
 }
 
 void AMeleeEnemy::BeginPlay()
@@ -83,10 +85,10 @@ void AMeleeEnemy::ApplyDamage()
 			float CritChance = StatsComponent->GetStatValue(ERPGStatType::MeleeCrit);
 			float RandomRoll = FMath::RandRange(0.0f, 100.0f); // Tiramos un dado del 0 al 100
 
-			// Si el dado saca menos o igual a nuestra probabilidad... ¡CRÍTICO!
+			// Si el dado saca menos o igual a nuestra probabilidad, critico
 			if (RandomRoll <= CritChance)
 			{
-				EnemyDamageAmount *= 1.5f; // Multiplicamos el daño x1.5 (puedes cambiar esto a x2.0)
+				EnemyDamageAmount *= 1.5f; // Multiplicamos el daño x1.5 
 				bWasCriticalHit = true;
 			}
 		}
