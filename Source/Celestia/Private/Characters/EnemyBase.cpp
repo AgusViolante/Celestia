@@ -71,14 +71,18 @@ float AEnemyBase::TakeDamage(float DamageAmount, struct FDamageEvent const& Dama
 	}
 	if (AEnemyAIController* AICon = Cast<AEnemyAIController>(GetController()))
 	{
+		
 		if (EventInstigator && EventInstigator->GetPawn())
 		{
 			AICon->ReceiveDamageAggro(EventInstigator->GetPawn());
 		}
-
-		else if (DamageCauser)
+		else if (ACharacter* CauserChar = Cast<ACharacter>(DamageCauser))
 		{
-			AICon->ReceiveDamageAggro(DamageCauser);
+			AICon->ReceiveDamageAggro(CauserChar);
+		}
+		else if (ACharacter* PlayerChar = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0))
+		{
+			AICon->ReceiveDamageAggro(PlayerChar);
 		}
 	}
 	if (HealthComponent)
