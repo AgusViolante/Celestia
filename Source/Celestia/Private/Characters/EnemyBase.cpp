@@ -14,6 +14,7 @@
 #include "NiagaraComponent.h"
 #include "AIController.h"
 #include "BrainComponent.h"
+#include "Quests/QuestComponent.h"
 #include "Engine/Engine.h"
 
 AEnemyBase::AEnemyBase()
@@ -127,6 +128,12 @@ void AEnemyBase::Die_Implementation()
 			{
 				GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Cyan, FString::Printf(TEXT("+%.0f XP"), XPToGive));
 			}
+		}
+		if (UQuestComponent* QuestComp = PlayerChar->FindComponentByClass<UQuestComponent>())
+		{
+			// Le avisamos al QuestComponent que matamos a este enemigo.
+			// Pasamos el tipo (Kill), el ID del enemigo ("Slime"), nullptr porque no es un item, y la cantidad (1).
+			QuestComp->UpdateObjective(EObjectiveType::Kill, EnemyQuestID, nullptr, 1);
 		}
 	}
 

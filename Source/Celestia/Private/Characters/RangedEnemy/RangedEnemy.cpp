@@ -8,6 +8,8 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/Character.h"
+#include "Components/SphereComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 ARangedEnemy::ARangedEnemy()
 {

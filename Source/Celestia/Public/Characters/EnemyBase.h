@@ -73,6 +73,9 @@ public:
 
 	virtual void ApplyStun_Implementation(float Duration) override;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Quests")
+	FName EnemyQuestID;
+
 protected:
 	virtual void BeginPlay() override;
 

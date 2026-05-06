@@ -1,7 +1,9 @@
 #include "UI/UIPlayerHUD.h"
 #include "Components/ProgressBar.h"
 #include "Components/StaminaComponent.h"
+#include "Quests/QuestComponent.h"
 #include "Components/TextBlock.h"
+
 
 void UUIPlayerHUD::UpdateHealth(UHealthComponent* HealthComp, float CurrentHealth, float MaxHealth, float HealthDelta)
 {
@@ -41,11 +43,10 @@ void UUIPlayerHUD::UpdateMana(float CurrentMana, float MaxMana)
 
 void UUIPlayerHUD::UpdateStat(ERPGStatType StatType, float NewValue)
 {
-	// Redondeamos el valor una sola vez
+	
 	int32 RoundedValue = FMath::RoundToInt(NewValue);
 	FString FormattedString;
 
-	// Asignamos el prefijo de texto correspondiente según el atributo
 	switch (StatType)
 	{
 	case ERPGStatType::Strength:
@@ -118,5 +119,61 @@ void UUIPlayerHUD::UpdateLevel(int32 NewLevel)
 	if (Level_Text)
 	{
 	Level_Text->SetText(FText::AsNumber(NewLevel));
+	}
+}
+void UUIPlayerHUD::UpdateTrackedQuest(const FActiveQuest& TrackedQuest)
+{
+	
+	if (Txt_TrackedQuestName && TrackedQuest.QuestData)
+	{
+		Txt_TrackedQuestName->SetText(TrackedQuest.QuestData->QuestName);
+	}
+
+	
+	if (QuestObjectivesContainer)
+	{
+		
+		QuestObjectivesContainer->ClearChildren();
+
+		for (const FQuestObjective& Obj : TrackedQuest.CurrentObjectives)
+		{
+			UTextBlock* ObjText = NewObject<UTextBlock>(this);
+			FString TargetName = "???";
+
+			if (Obj.ObjectiveType == EObjectiveType::Kill)
+			{
+				// Prioridad a la clase del enemigo si existe, sino al ID
+				TargetName = Obj.TargetEnemyClass ? Obj.TargetEnemyClass->GetName() : Obj.TargetID.ToString();
+			}
+			else if (Obj.ObjectiveType == EObjectiveType::Collect)
+			{
+				TargetName = Obj.TargetItemClass ? Obj.TargetItemClass->GetName() : "Item";
+			}
+
+			TargetName.RemoveFromEnd(TEXT("_C")); // Limpiar nombre de Blueprint
+
+			FString ObjString = FString::Printf(TEXT("- %s: %d / %d"), *TargetName, Obj.CurrentAmount, Obj.RequiredAmount);
+			ObjText->SetText(FText::FromString(ObjString));
+
+				
+				FSlateFontInfo FontInfo = ObjText->GetFont();
+				FontInfo.Size = 14;
+				ObjText->SetFont(FontInfo);
+
+				QuestObjectivesContainer->AddChild(ObjText);
+			}
+		}
+	}
+
+
+void UUIPlayerHUD::ClearTrackedQuest()
+{
+	if (Txt_TrackedQuestName)
+	{
+		Txt_TrackedQuestName->SetText(FText::FromString(TEXT("")));
+	}
+	if (QuestObjectivesContainer)
+	{
+		QuestObjectivesContainer->ClearChildren();
 	}
 }

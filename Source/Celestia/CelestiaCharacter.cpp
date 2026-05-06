@@ -21,6 +21,8 @@
 #include "Components/StaminaComponent.h"
 #include "Components/ProgressionComponent.h"
 #include "Components/StatsComponent.h"
+#include "Quests/QuestComponent.h"
+#include "Characters/NPC/NPCBase.h"
 #include "Components/ManaComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
@@ -152,6 +154,14 @@ void ACelestiaCharacter::BeginPlay()
 					ProgressionComponent->OnLevelUp.AddDynamic(this, &ACelestiaCharacter::TriggerLevelUpVFX);
 				}
 			}
+			if (UQuestComponent* QuestComp = FindComponentByClass<UQuestComponent>())
+			{
+				QuestComp->OnObjectiveUpdated.AddDynamic(PlayerHUDInstance, &UUIPlayerHUD::UpdateTrackedQuest);
+
+				QuestComp->OnQuestTracked.AddDynamic(PlayerHUDInstance, &UUIPlayerHUD::UpdateTrackedQuest);
+
+				QuestComp->OnQuestRewardsGranted.AddDynamic(this, &ACelestiaCharacter::ReceiveQuestRewards);
+			}
 		}
 	}
 
@@ -175,6 +185,7 @@ void ACelestiaCharacter::BeginPlay()
 	{
 		ProgressionComponent->OnLevelUp.AddDynamic(StatsComponent, &UStatsComponent::OnLevelUp);
 	}
+
 }
 void ACelestiaCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -297,6 +308,7 @@ void ACelestiaCharacter::OnInteractInput()
 	for (AActor* Actor : OverlappingActors)
 	{
 		if (Actor->GetAttachParentActor() != nullptr) continue;
+
 		if (Actor && Actor->GetClass()->ImplementsInterface(UI_PickUp::StaticClass()))
 		{
 			if (HasAuthority())
@@ -307,11 +319,26 @@ void ACelestiaCharacter::OnInteractInput()
 			{
 				Server_Interact(Actor);
 			}
-			break;
+			return; // Si recogimos un ítem, cortamos la ejecución aquí
+		}
+	}
+
+		FVector Start = GetActorLocation();
+	FVector End = Start + (GetActorForwardVector() * 150.0f); // Busca hasta 1.5 metros hacia adelante
+	FCollisionShape Sphere = FCollisionShape::MakeSphere(100.0f); // Grosor de la búsqueda
+
+	FHitResult HitResult;
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this); // Evitamos que el jugador se detecte a sí mismo
+
+	if (GetWorld()->SweepSingleByChannel(HitResult, Start, End, FQuat::Identity, ECC_Pawn, Sphere, QueryParams))
+	{
+		if (ANPCBase* NPC = Cast<ANPCBase>(HitResult.GetActor()))
+		{
+			NPC->Interact(this);
 		}
 	}
 }
-
 bool ACelestiaCharacter::Server_Interact_Validate(AActor* TargetActor)
 {
 	return true; 
@@ -739,3 +766,28 @@ void ACelestiaCharacter::ReleaseStun()
 	OnStunEnded();
 }
 
+void ACelestiaCharacter::ReceiveQuestRewards(int32 CoinsReward, const TArray<FItemReward>& ItemsReward)
+{
+	if (GEngine && CoinsReward > 0)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Yellow, FString::Printf(TEXT("+%d Monedas por mision"), CoinsReward));
+	}
+
+	for (const FItemReward& Reward : ItemsReward)
+	{
+		if (Reward.ItemClass)
+		{
+			FString ItemName = Reward.ItemClass->GetName();
+
+			ItemName.RemoveFromEnd(TEXT("_C"));
+			ItemName.RemoveFromStart(TEXT("BP_"));
+
+			ReceiveItem_Implementation(Reward.Quantity, ItemName);
+
+			if (GEngine)
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Green, FString::Printf(TEXT("Recibiste: %s x%d"), *ItemName, Reward.Quantity));
+			}
+		}
+	}
+}

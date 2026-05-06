@@ -132,6 +132,9 @@ public:
 	UPROPERTY()
 	UUIPlayerHUD* PlayerHUDInstance;
 
+	UFUNCTION()
+	void ReceiveQuestRewards(int32 CoinsReward, const TArray<FItemReward>& ItemsReward);
+
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Components")
 	UStaminaComponent* StaminaComponent;
 

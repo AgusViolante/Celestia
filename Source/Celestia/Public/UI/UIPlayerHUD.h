@@ -2,7 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "Components/StatsComponent.h" // Necesario para conocer el enum ERPGStatType
+#include "Components/StatsComponent.h"
+#include "Components/VerticalBox.h"
 #include "UIPlayerHUD.generated.h"
 
 class UProgressBar;
@@ -10,6 +11,7 @@ class UTextBlock;
 class UHealthComponent;
 class UStaminaComponent;
 class UNiagaraSystem;
+class UQuestComponent;
 
 UCLASS()
 class CELESTIA_API UUIPlayerHUD : public UUserWidget
@@ -76,5 +78,18 @@ public:
 
 	UFUNCTION()
 	void UpdateLevel(int32 NewLevel);
+
+	// --- QUEST TRACKER ---
+	UPROPERTY(meta = (BindWidgetOptional))
+	UTextBlock* Txt_TrackedQuestName;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	UVerticalBox* QuestObjectivesContainer;
+
+	UFUNCTION(BlueprintCallable, Category = "Quests | UI")
+	void UpdateTrackedQuest(const FActiveQuest& TrackedQuest);
+
+	UFUNCTION(BlueprintCallable, Category = "Quests | UI")
+	void ClearTrackedQuest();
 
 };
