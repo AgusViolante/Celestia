@@ -9,6 +9,7 @@
 class UTextBlock;
 class UButton;
 class ANPCBase;
+class UQuestDataAsset;
 
 UCLASS()
 class CELESTIA_API UUINPCDialogue : public UUserWidget
@@ -16,6 +17,10 @@ class CELESTIA_API UUINPCDialogue : public UUserWidget
 	GENERATED_BODY()
 
 public:
+
+	UPROPERTY(meta = (BindWidget))
+	class UWidget* Panel_Main;
+
 	// --- ELEMENTOS VISUALES ---
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* Txt_NPCName;
@@ -38,6 +43,24 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	UButton* Btn_Leave;
 
+	UPROPERTY(meta = (BindWidget))
+	class UWidget* Panel_QuestDetails;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* Txt_QuestTitle;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* Txt_QuestLore;
+
+	UPROPERTY(meta = (BindWidget))
+	UButton* Btn_AcceptQuest;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* Txt_AcceptBtn;
+
+	UPROPERTY(meta = (BindWidget))
+	UButton* Btn_DeclineQuest;
+
 	// Inicializa la UI según los datos del NPC
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	void SetupUI(ANPCBase* InNPC, AActor* InInteractor);
@@ -58,10 +81,19 @@ protected:
 	UFUNCTION()
 	void OnLeaveClicked();
 
+	UFUNCTION() 
+	void OnAcceptQuestClicked();
+
+	UFUNCTION() 
+	void OnDeclineQuestClicked();
+
 private:
 	UPROPERTY()
 	ANPCBase* CurrentNPC;
 
 	UPROPERTY()
 	AActor* CurrentInteractor;
+
+	UPROPERTY() UQuestDataAsset* PendingQuest;
+	bool bIsTurningIn = false;
 };

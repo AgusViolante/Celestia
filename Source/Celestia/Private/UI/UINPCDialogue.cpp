@@ -1,11 +1,8 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "UI/UINPCDialogue.h"
-
 #include "Characters/NPC/NPCBase.h"
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
+#include "Components/Widget.h"
 #include "Quests/QuestComponent.h"
 #include "GameFramework/PlayerController.h"
 
@@ -13,50 +10,79 @@ void UUINPCDialogue::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	// Conectamos los botones a nuestras funciones
 	if (Btn_Quest) Btn_Quest->OnClicked.AddDynamic(this, &UUINPCDialogue::OnQuestClicked);
 	if (Btn_Shop) Btn_Shop->OnClicked.AddDynamic(this, &UUINPCDialogue::OnShopClicked);
 	if (Btn_Craft) Btn_Craft->OnClicked.AddDynamic(this, &UUINPCDialogue::OnCraftClicked);
 	if (Btn_Leave) Btn_Leave->OnClicked.AddDynamic(this, &UUINPCDialogue::OnLeaveClicked);
+
+	if (Btn_AcceptQuest) Btn_AcceptQuest->OnClicked.AddDynamic(this, &UUINPCDialogue::OnAcceptQuestClicked);
+	if (Btn_DeclineQuest) Btn_DeclineQuest->OnClicked.AddDynamic(this, &UUINPCDialogue::OnDeclineQuestClicked);
 }
 
 void UUINPCDialogue::SetupUI(ANPCBase* InNPC, AActor* InInteractor)
 {
 	CurrentNPC = InNPC;
 	CurrentInteractor = InInteractor;
+	PendingQuest = nullptr;
 
 	if (!CurrentNPC || !CurrentInteractor) return;
 
-	// 1. Configuramos los textos principales
+	// Estado inicial de los paneles
+	if (Panel_Main) Panel_Main->SetVisibility(ESlateVisibility::Visible);
+	if (Panel_QuestDetails) Panel_QuestDetails->SetVisibility(ESlateVisibility::Collapsed);
+
 	if (Txt_NPCName) Txt_NPCName->SetText(CurrentNPC->NPC_Name);
 	if (Txt_Greeting) Txt_Greeting->SetText(CurrentNPC->GreetingMessage);
 
-	// 2. Lógica del Botón de Misiones (Verificamos si hay algo que hacer)
 	bool bShowQuestBtn = false;
+	FString QuestBtnText = TEXT("Misiones");
+
 	if (UQuestComponent* QuestComp = CurrentInteractor->FindComponentByClass<UQuestComponent>())
 	{
-		// ¿El NPC tiene misiones para dar?
-		if (CurrentNPC->AvailableQuests.Num() > 0) bShowQuestBtn = true;
-
-		// ¿El jugador viene a entregar una misión?
+		// 1. ¿Venimos a entregar una misión?
 		for (const FActiveQuest& ActiveQuest : QuestComp->ActiveQuests)
 		{
-			if (ActiveQuest.QuestData && ActiveQuest.QuestData->ReceiverNPC_ID == CurrentNPC->NPC_ID)
+			if (ActiveQuest.bIsReadyToTurnIn && ActiveQuest.QuestData && ActiveQuest.QuestData->ReceiverNPC_ID == CurrentNPC->NPC_ID)
 			{
 				bShowQuestBtn = true;
-				if (Txt_QuestBtn) Txt_QuestBtn->SetText(FText::FromString(TEXT("Entregar Misión")));
+				bIsTurningIn = true;
+				PendingQuest = ActiveQuest.QuestData;
+				QuestBtnText = TEXT("Entregar Misión");
 				break;
 			}
 		}
-	}
-	// Ocultamos el botón si este NPC no tiene nada que ver con misiones
-	if (Btn_Quest) Btn_Quest->SetVisibility(bShowQuestBtn ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 
-	// 3. Ocultar/Mostrar Botones de Servicios
+		// 2. Si no entregamos nada, ¿hay una misión nueva para dar?
+		if (!bShowQuestBtn)
+		{
+			for (UQuestDataAsset* QuestToGive : CurrentNPC->AvailableQuests)
+			{
+				if (QuestToGive && QuestToGive->GiverNPC_ID == CurrentNPC->NPC_ID)
+				{
+					// Verificamos que no la tenga ya, ni la haya completado antes
+					bool bAlreadyHas = false;
+					for (const FActiveQuest& AQ : QuestComp->ActiveQuests) { if (AQ.QuestData == QuestToGive) bAlreadyHas = true; }
+					bool bCompleted = QuestComp->IsQuestCompleted(QuestToGive->QuestID);
+
+					if (!bAlreadyHas && !bCompleted)
+					{
+						bShowQuestBtn = true;
+						bIsTurningIn = false;
+						PendingQuest = QuestToGive;
+						QuestBtnText = TEXT("Nueva Misión");
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	if (Btn_Quest) Btn_Quest->SetVisibility(bShowQuestBtn ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	if (Txt_QuestBtn) Txt_QuestBtn->SetText(FText::FromString(QuestBtnText));
+
 	if (Btn_Shop) Btn_Shop->SetVisibility(CurrentNPC->bHasShop ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 	if (Btn_Craft) Btn_Craft->SetVisibility(CurrentNPC->bHasCrafting ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 
-	// 4. Pausar el input del jugador y mostrar el mouse
 	if (APawn* InteractorPawn = Cast<APawn>(CurrentInteractor))
 	{
 		if (APlayerController* PC = Cast<APlayerController>(InteractorPawn->GetController()))
@@ -71,46 +97,62 @@ void UUINPCDialogue::SetupUI(ANPCBase* InNPC, AActor* InInteractor)
 
 void UUINPCDialogue::OnQuestClicked()
 {
-	if (CurrentNPC && CurrentInteractor)
+	if (!PendingQuest) return;
+
+	// Ocultamos el saludo y mostramos el Lore
+	if (Panel_Main) Panel_Main->SetVisibility(ESlateVisibility::Collapsed);
+	if (Panel_QuestDetails) Panel_QuestDetails->SetVisibility(ESlateVisibility::Visible);
+
+	if (Txt_QuestTitle) Txt_QuestTitle->SetText(PendingQuest->QuestName);
+	if (Txt_QuestLore) Txt_QuestLore->SetText(PendingQuest->QuestDescription);
+
+	if (bIsTurningIn)
 	{
-		// Llamamos a la lógica de misiones que movimos al NPC
-		CurrentNPC->ProcessQuestInteraction(CurrentInteractor);
+		if (Txt_AcceptBtn) Txt_AcceptBtn->SetText(FText::FromString(TEXT("Recibir Recompensa")));
+		if (Btn_DeclineQuest) Btn_DeclineQuest->SetVisibility(ESlateVisibility::Collapsed); // No puedes rechazar una entrega
 	}
-	OnLeaveClicked(); // Cerramos la ventana
+	else
+	{
+		if (Txt_AcceptBtn) Txt_AcceptBtn->SetText(FText::FromString(TEXT("Aceptar Misión")));
+		if (Btn_DeclineQuest) Btn_DeclineQuest->SetVisibility(ESlateVisibility::Visible);
+	}
 }
 
-void UUINPCDialogue::OnShopClicked()
+void UUINPCDialogue::OnAcceptQuestClicked()
 {
-	if (CurrentNPC && CurrentInteractor)
+	if (UQuestComponent* QuestComp = CurrentInteractor->FindComponentByClass<UQuestComponent>())
 	{
-		CurrentNPC->OpenShop(CurrentInteractor);
+		if (bIsTurningIn)
+		{
+			QuestComp->TurnInQuest(PendingQuest);
+		}
+		else
+		{
+			QuestComp->AcceptQuest(PendingQuest);
+		}
 	}
-	OnLeaveClicked();
+	OnLeaveClicked(); // Cerramos la UI
 }
 
-void UUINPCDialogue::OnCraftClicked()
+void UUINPCDialogue::OnDeclineQuestClicked()
 {
-	if (CurrentNPC && CurrentInteractor)
-	{
-		CurrentNPC->OpenCrafting(CurrentInteractor);
-	}
-	OnLeaveClicked();
+	// Si rechaza, volvemos al menú principal del NPC
+	if (Panel_QuestDetails) Panel_QuestDetails->SetVisibility(ESlateVisibility::Collapsed);
+	if (Panel_Main) Panel_Main->SetVisibility(ESlateVisibility::Visible);
 }
+
+void UUINPCDialogue::OnShopClicked() { if (CurrentNPC) CurrentNPC->OpenShop(CurrentInteractor); OnLeaveClicked(); }
+void UUINPCDialogue::OnCraftClicked() { if (CurrentNPC) CurrentNPC->OpenCrafting(CurrentInteractor); OnLeaveClicked(); }
 
 void UUINPCDialogue::OnLeaveClicked()
 {
-	// Restaurar el control al jugador y ocultar el mouse
-	if (CurrentInteractor)
+	if (APawn* InteractorPawn = Cast<APawn>(CurrentInteractor))
 	{
-		if (APawn* InteractorPawn = Cast<APawn>(CurrentInteractor))
+		if (APlayerController* PC = Cast<APlayerController>(InteractorPawn->GetController()))
 		{
-			if (APlayerController* PC = Cast<APlayerController>(InteractorPawn->GetController()))
-			{
-				PC->SetShowMouseCursor(false);
-				PC->SetInputMode(FInputModeGameOnly());
-			}
+			PC->SetShowMouseCursor(false);
+			PC->SetInputMode(FInputModeGameOnly());
 		}
 	}
-
 	RemoveFromParent();
 }

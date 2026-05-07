@@ -35,6 +35,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnObjectiveUpdatedSignature, const 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnQuestTrackedSignature, const FActiveQuest&, TrackedQuest);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnQuestRewardsGrantedSignature, int32, CoinsToGive, const TArray<FItemReward>&, ItemsToGive);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnQuestItemsConsumedSignature, const TArray<FQuestObjective>&, ConsumedObjectives);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnQuestUntrackedSignature);
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class CELESTIA_API UQuestComponent : public UActorComponent
@@ -86,6 +87,9 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Quests | UI")
 	bool IsQuestCompleted(FName QuestIDToCheck) const;
+
+	UPROPERTY(BlueprintAssignable, Category = "Quests | Events")
+	FOnQuestUntrackedSignature OnQuestUntracked;
 
 
 	// --- FUNCIONES CORE ---

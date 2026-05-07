@@ -142,15 +142,19 @@ void UUIPlayerHUD::UpdateTrackedQuest(const FActiveQuest& TrackedQuest)
 
 			if (Obj.ObjectiveType == EObjectiveType::Kill)
 			{
-				// Prioridad a la clase del enemigo si existe, sino al ID
 				TargetName = Obj.TargetEnemyClass ? Obj.TargetEnemyClass->GetName() : Obj.TargetID.ToString();
 			}
 			else if (Obj.ObjectiveType == EObjectiveType::Collect)
 			{
 				TargetName = Obj.TargetItemClass ? Obj.TargetItemClass->GetName() : "Item";
 			}
+			else if (Obj.ObjectiveType == EObjectiveType::Location)
+			{
+				TargetName = Obj.TargetID.ToString();
+				TargetName = TargetName.Replace(TEXT("_"), TEXT(" "));
+			}
 
-			TargetName.RemoveFromEnd(TEXT("_C")); // Limpiar nombre de Blueprint
+			TargetName.RemoveFromEnd(TEXT("_C"));
 
 			FString ObjString = FString::Printf(TEXT("- %s: %d / %d"), *TargetName, Obj.CurrentAmount, Obj.RequiredAmount);
 			ObjText->SetText(FText::FromString(ObjString));
@@ -161,6 +165,21 @@ void UUIPlayerHUD::UpdateTrackedQuest(const FActiveQuest& TrackedQuest)
 				ObjText->SetFont(FontInfo);
 
 				QuestObjectivesContainer->AddChild(ObjText);
+
+				if (TrackedQuest.bIsReadyToTurnIn)
+				{
+					UTextBlock* CompleteText = NewObject<UTextBlock>(this);
+
+					CompleteText->SetText(FText::FromString(TEXT(">> Mision Lista para Entregar <<")));
+
+					FSlateFontInfo CompleteFontInfo = CompleteText->GetFont();
+					CompleteFontInfo.Size = 16;
+					CompleteText->SetFont(CompleteFontInfo);
+
+					CompleteText->SetColorAndOpacity(FSlateColor(FLinearColor::Green));
+
+					QuestObjectivesContainer->AddChild(CompleteText);
+				}
 			}
 		}
 	}

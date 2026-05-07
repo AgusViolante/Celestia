@@ -64,7 +64,7 @@ void UQuestComponent::UpdateObjective(EObjectiveType Type, FName TargetID, TSubc
 				{
 					if (Objective.TargetItemClass == TargetItemClass) bIsMatch = true;
 				}
-				else if (Type == EObjectiveType::Kill)
+				else if (Type == EObjectiveType::Kill || Type == EObjectiveType::Location)
 				{
 					if (Objective.TargetID == TargetID) bIsMatch = true;
 				}
@@ -155,6 +155,7 @@ void UQuestComponent::TurnInQuest(UQuestDataAsset* QuestToTurnIn)
 				if (TrackedQuestData == QuestToTurnIn)
 				{
 					TrackedQuestData = nullptr;
+					OnQuestUntracked.Broadcast(); 
 				}
 
 				ActiveQuests.RemoveAtSwap(i);

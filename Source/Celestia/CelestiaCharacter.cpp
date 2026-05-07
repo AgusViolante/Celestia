@@ -161,6 +161,10 @@ void ACelestiaCharacter::BeginPlay()
 				QuestComp->OnQuestTracked.AddDynamic(PlayerHUDInstance, &UUIPlayerHUD::UpdateTrackedQuest);
 
 				QuestComp->OnQuestRewardsGranted.AddDynamic(this, &ACelestiaCharacter::ReceiveQuestRewards);
+
+				QuestComp->OnQuestUntracked.AddDynamic(PlayerHUDInstance, &UUIPlayerHUD::ClearTrackedQuest);
+
+				PlayerHUDInstance->ClearTrackedQuest();
 			}
 		}
 	}
