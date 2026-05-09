@@ -100,7 +100,7 @@ public:
 
 	// Llamada por los enemigos, triggers, etc. para avanzar la misión
 	UFUNCTION(BlueprintCallable, Category = "Quests")
-	void UpdateObjective(EObjectiveType Type, FName TargetID, TSubclassOf<AItemBase> TargetItemClass, int32 Amount);
+	void UpdateObjective(EObjectiveType Type, FName TargetID, TSubclassOf<class AItemBase> TargetItemClass, int32 Amount);
 
 	// Llamada por la UI cuando seleccionas una misión para seguir
 	UFUNCTION(BlueprintCallable, Category = "Quests")

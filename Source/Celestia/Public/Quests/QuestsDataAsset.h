@@ -39,7 +39,7 @@ struct FQuestObjective
 	TSubclassOf<AEnemyBase> TargetEnemyClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Objective", meta = (EditCondition = "ObjectiveType == EObjectiveType::Collect"))
-	TSubclassOf<AItemBase> TargetItemClass;
+	TSubclassOf<class AItemBase> TargetItemClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Objective")
 	FName TargetID;
