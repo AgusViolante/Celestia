@@ -51,6 +51,10 @@ struct FQuestObjective
 	int32 CurrentAmount;
 
 	FQuestObjective() : ObjectiveType(EObjectiveType::Kill), RequiredAmount(1), CurrentAmount(0) {}
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Objective")
+	FText TargetDisplayName;
+
 };
 USTRUCT(BlueprintType)
 struct FItemReward
@@ -64,6 +68,9 @@ struct FItemReward
 	int32 Quantity;
 
 	FItemReward() : ItemClass(nullptr), Quantity(1) {}
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Reward")
+	FText ItemDisplayName;
 };
 USTRUCT(BlueprintType)
 struct FQuestReward
@@ -105,7 +112,13 @@ public:
 	FName GiverNPC_ID;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Info")
+	FText GiverName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Info")
 	FName ReceiverNPC_ID;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Info")
+	FText ReceiverName;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Objectives")
 	TArray<FQuestObjective> Objectives;

@@ -123,67 +123,46 @@ void UUIPlayerHUD::UpdateLevel(int32 NewLevel)
 }
 void UUIPlayerHUD::UpdateTrackedQuest(const FActiveQuest& TrackedQuest)
 {
-	
 	if (Txt_TrackedQuestName && TrackedQuest.QuestData)
 	{
 		Txt_TrackedQuestName->SetText(TrackedQuest.QuestData->QuestName);
 	}
 
-	
 	if (QuestObjectivesContainer)
 	{
-		
 		QuestObjectivesContainer->ClearChildren();
 
 		for (const FQuestObjective& Obj : TrackedQuest.CurrentObjectives)
 		{
 			UTextBlock* ObjText = NewObject<UTextBlock>(this);
-			FString TargetName = "???";
 
-			if (Obj.ObjectiveType == EObjectiveType::Kill)
-			{
-				TargetName = Obj.TargetEnemyClass ? Obj.TargetEnemyClass->GetName() : Obj.TargetID.ToString();
-			}
-			else if (Obj.ObjectiveType == EObjectiveType::Collect)
-			{
-				TargetName = Obj.TargetItemClass ? Obj.TargetItemClass->GetName() : "Item";
-			}
-			else if (Obj.ObjectiveType == EObjectiveType::Location)
-			{
-				TargetName = Obj.TargetID.ToString();
-				TargetName = TargetName.Replace(TEXT("_"), TEXT(" "));
-			}
-
-			TargetName.RemoveFromEnd(TEXT("_C"));
+			FString TargetName = Obj.TargetDisplayName.IsEmpty() ? TEXT("???") : Obj.TargetDisplayName.ToString();
 
 			FString ObjString = FString::Printf(TEXT("- %s: %d / %d"), *TargetName, Obj.CurrentAmount, Obj.RequiredAmount);
 			ObjText->SetText(FText::FromString(ObjString));
 
-				
-				FSlateFontInfo FontInfo = ObjText->GetFont();
-				FontInfo.Size = 14;
-				ObjText->SetFont(FontInfo);
+			FSlateFontInfo FontInfo = ObjText->GetFont();
+			FontInfo.Size = 14;
+			ObjText->SetFont(FontInfo);
 
-				QuestObjectivesContainer->AddChild(ObjText);
+			QuestObjectivesContainer->AddChild(ObjText);
+		}
 
-				if (TrackedQuest.bIsReadyToTurnIn)
-				{
-					UTextBlock* CompleteText = NewObject<UTextBlock>(this);
+		if (TrackedQuest.bIsReadyToTurnIn)
+		{
+			UTextBlock* CompleteText = NewObject<UTextBlock>(this);
 
-					CompleteText->SetText(FText::FromString(TEXT(">> Mision Lista para Entregar <<")));
+			CompleteText->SetText(FText::FromString(TEXT(">> Mision Lista para Entregar <<")));
 
-					FSlateFontInfo CompleteFontInfo = CompleteText->GetFont();
-					CompleteFontInfo.Size = 16;
-					CompleteText->SetFont(CompleteFontInfo);
+			FSlateFontInfo CompleteFontInfo = CompleteText->GetFont();
+			CompleteFontInfo.Size = 16;
+			CompleteText->SetFont(CompleteFontInfo);
+			CompleteText->SetColorAndOpacity(FSlateColor(FLinearColor::Green));
 
-					CompleteText->SetColorAndOpacity(FSlateColor(FLinearColor::Green));
-
-					QuestObjectivesContainer->AddChild(CompleteText);
-				}
-			}
+			QuestObjectivesContainer->AddChild(CompleteText);
 		}
 	}
-
+}
 
 void UUIPlayerHUD::ClearTrackedQuest()
 {
