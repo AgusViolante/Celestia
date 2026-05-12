@@ -40,7 +40,7 @@ void UQuestComponent::AcceptQuest(UQuestDataAsset* NewQuest)
 	{
 		TrackQuest(NewQuest);
 	}
-
+	OnQuestAccepted.Broadcast(ActiveQuests.Last());
 	OnQuestListUpdated.Broadcast();
 }
 
