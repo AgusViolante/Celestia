@@ -33,109 +33,91 @@ void UUINPCDialogue::SetupUI(ANPCBase* InNPC, AActor* InInteractor)
 
 	if (!CurrentNPC || !CurrentInteractor) return;
 
-	if (Panel_Main) Panel_Main->SetVisibility(ESlateVisibility::Visible);
-	if (Panel_QuestDetails) Panel_QuestDetails->SetVisibility(ESlateVisibility::Collapsed);
+	UQuestComponent* QuestComp = CurrentInteractor->FindComponentByClass<UQuestComponent>();
+	if (!QuestComp) return;
 
-	if (Txt_NPCName) Txt_NPCName->SetText(CurrentNPC->NPC_Name);
-	if (Txt_Greeting) Txt_Greeting->SetText(CurrentNPC->GreetingMessage);
-
-	bShowQuestBtn = false;
-	QuestBtnText = TEXT("Misiones");
-	
-
-	if (UQuestComponent* QuestComp = CurrentInteractor->FindComponentByClass<UQuestComponent>())
+	for (const FActiveQuest& ActiveQuest : QuestComp->ActiveQuests)
 	{
-
-		for (const FActiveQuest& ActiveQuest : QuestComp->ActiveQuests)
+		if (ActiveQuest.bIsReadyToTurnIn && ActiveQuest.QuestData && ActiveQuest.QuestData->ReceiverNPC_ID == CurrentNPC->NPC_ID)
 		{
-			if (ActiveQuest.bIsReadyToTurnIn && ActiveQuest.QuestData && ActiveQuest.QuestData->ReceiverNPC_ID == CurrentNPC->NPC_ID)
-			{
-				bShowQuestBtn = true;
-				bIsTurningIn = true;
-				PendingQuest = ActiveQuest.QuestData;
-				QuestBtnText = TEXT("Entregar Misión");
-				break;
-			}
-		}
-
-		bIsTalking = false;
-		if (!bShowQuestBtn) 
-		{
-			for (const FActiveQuest& ActiveQuest : QuestComp->ActiveQuests)
-			{
-				if (ActiveQuest.bIsReadyToTurnIn) continue;
-
-				for (const FQuestObjective& Obj : ActiveQuest.CurrentObjectives)
-				{
-					if (Obj.ObjectiveType == EObjectiveType::Talk && Obj.TargetID == CurrentNPC->NPC_ID && Obj.CurrentAmount < Obj.RequiredAmount)
-					{
-						bShowQuestBtn = true;
-						bIsTalking = true;
-						ActiveDialogueLines = Obj.DialogueLines;
-						CurrentLineIndex = 0;
-						TalkNPC_ID = CurrentNPC->NPC_ID;
-						QuestBtnText = TEXT("Hablar");
-						break;
-					}
-				}
-				if (bIsTalking) break;
-			}
-		}
-
-		if (!bShowQuestBtn)
-		{
-			
-			int32 PlayerCurrentLevel = 1;
-			APawn* PlayerPawn = GetOwningPlayerPawn();
-			if (PlayerPawn)
-			{
-				if (UProgressionComponent* ProgComp = PlayerPawn->FindComponentByClass<UProgressionComponent>())
-				{
-					PlayerCurrentLevel = ProgComp->CurrentLevel;
-				}
-			}
-
-			for (UQuestDataAsset* QuestToGive : CurrentNPC->AvailableQuests)
-			{
-				if (QuestToGive && QuestToGive->GiverNPC_ID == CurrentNPC->NPC_ID)
-				{
-					if (PlayerCurrentLevel < QuestToGive->RequiredLevel)
-					{
-						continue;
-					}
-
-					bool bAlreadyHas = false;
-					for (const FActiveQuest& AQ : QuestComp->ActiveQuests) { if (AQ.QuestData == QuestToGive) bAlreadyHas = true; }
-					bool bCompleted = QuestComp->IsQuestCompleted(QuestToGive->QuestID);
-
-					if (!bAlreadyHas && !bCompleted)
-					{
-						bShowQuestBtn = true;
-						PendingQuest = QuestToGive;
-						QuestBtnText = TEXT("Nueva Misión");
-						break;
-					}
-				}
-			}
-		}
-	} 
-	if (Btn_Quest) Btn_Quest->SetVisibility(bShowQuestBtn ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-	if (Txt_QuestBtn) Txt_QuestBtn->SetText(FText::FromString(QuestBtnText));
-
-	if (Btn_Shop) Btn_Shop->SetVisibility(CurrentNPC->bHasShop ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-	if (Btn_Craft) Btn_Craft->SetVisibility(CurrentNPC->bHasCrafting ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-
-	if (APawn* InteractorPawn = Cast<APawn>(CurrentInteractor))
-	{
-		if (APlayerController* PC = Cast<APlayerController>(InteractorPawn->GetController()))
-		{
-			PC->SetShowMouseCursor(true);
-			FInputModeUIOnly InputMode;
-			InputMode.SetWidgetToFocus(TakeWidget());
-			PC->SetInputMode(InputMode);
+			bShowQuestBtn = true;
+			bIsTurningIn = true;
+			PendingQuest = ActiveQuest.QuestData;
+			QuestBtnText = TEXT("Entregar Misión");
+			break;
 		}
 	}
-}
+
+	if (!bShowQuestBtn)
+	{
+		for (const FActiveQuest& ActiveQuest : QuestComp->ActiveQuests)
+		{
+			if (ActiveQuest.bIsReadyToTurnIn) continue;
+
+			for (const FQuestObjective& Obj : ActiveQuest.CurrentObjectives)
+			{
+				if (Obj.ObjectiveType == EObjectiveType::Talk && Obj.TargetID == CurrentNPC->NPC_ID && Obj.CurrentAmount < Obj.RequiredAmount)
+				{
+					bShowQuestBtn = true;
+					bIsTalking = true;
+					ActiveDialogueLines = Obj.DialogueLines;
+					CurrentLineIndex = 0;
+					TalkNPC_ID = CurrentNPC->NPC_ID;
+					QuestBtnText = TEXT("Hablar");
+					break;
+				}
+			}
+			if (bIsTalking) break;
+		}
+	}
+
+	if (!bShowQuestBtn)
+	{
+		int32 PlayerCurrentLevel = 1;
+		APawn* PlayerPawn = GetOwningPlayerPawn();
+		if (PlayerPawn)
+		{
+			if (UProgressionComponent* ProgComp = PlayerPawn->FindComponentByClass<UProgressionComponent>())
+			{
+				PlayerCurrentLevel = ProgComp->CurrentLevel;
+			}
+		}
+
+		for (UQuestDataAsset* QuestToGive : CurrentNPC->AvailableQuests)
+		{
+			if (QuestToGive && QuestToGive->GiverNPC_ID == CurrentNPC->NPC_ID)
+			{
+				if (PlayerCurrentLevel < QuestToGive->RequiredLevel) continue;
+
+				bool bAlreadyHas = false;
+				for (const FActiveQuest& AQ : QuestComp->ActiveQuests) { if (AQ.QuestData == QuestToGive) bAlreadyHas = true; }
+				bool bCompleted = QuestComp->IsQuestCompleted(QuestToGive->QuestID);
+
+				if (!bAlreadyHas && !bCompleted)
+				{
+					bShowQuestBtn = true;
+					PendingQuest = QuestToGive;
+					QuestBtnText = TEXT("Nueva Misión");
+					break;
+				}
+			}
+		}
+	}
+
+	if (Btn_Quest)
+	{
+		if (bShowQuestBtn)
+		{
+			Btn_Quest->SetVisibility(ESlateVisibility::Visible);
+			if (Txt_AcceptBtn) Txt_AcceptBtn->SetText(FText::FromString(QuestBtnText));
+		}
+		else
+		{
+			Btn_Quest->SetVisibility(ESlateVisibility::Collapsed);
+		}
+	}
+} 
+
 void UUINPCDialogue::OnQuestClicked()
 {
 	if (bIsTalking)
