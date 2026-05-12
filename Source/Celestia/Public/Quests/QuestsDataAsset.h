@@ -24,7 +24,9 @@ enum class EObjectiveType : uint8
 	Kill		UMETA(DisplayName = "Matar Enemigo"),
 	Collect		UMETA(DisplayName = "Recolectar Item"),
 	Location	UMETA(DisplayName = "Alcanzar Ubicación"),
-	Dungeon		UMETA(DisplayName = "Completar Dungeon")
+	Dungeon		UMETA(DisplayName = "Completar Dungeon"),
+	Talk		UMETA(DisplayName = "Hablar con NPC")
+
 };
 
 USTRUCT(BlueprintType)
@@ -54,6 +56,9 @@ struct FQuestObjective
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Objective")
 	FText TargetDisplayName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Objective", meta = (EditCondition = "ObjectiveType == EObjectiveType::Talk"))
+	TArray<FText> DialogueLines;
 
 };
 USTRUCT(BlueprintType)
@@ -125,4 +130,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Rewards")
 	FQuestReward Rewards;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Info", meta = (ClampMin = "1"))
+	int32 RequiredLevel = 1;
 };

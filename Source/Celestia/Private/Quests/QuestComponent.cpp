@@ -19,6 +19,14 @@ void UQuestComponent::AcceptQuest(UQuestDataAsset* NewQuest)
 {
 	if (!NewQuest) return;
 
+	if (AActor* OwningActor = GetOwner())
+	{
+		if (UProgressionComponent* ProgComp = OwningActor->FindComponentByClass<UProgressionComponent>())
+		{
+			if (ProgComp->CurrentLevel < NewQuest->RequiredLevel) return;
+		}
+	}
+
 	for (const FActiveQuest& Quest : ActiveQuests)
 	{
 		if (Quest.QuestData == NewQuest) return;

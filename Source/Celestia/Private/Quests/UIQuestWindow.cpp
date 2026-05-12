@@ -9,6 +9,7 @@
 #include "Components/HorizontalBox.h"
 #include "Components/HorizontalBoxSlot.h"
 #include "Components/Button.h"
+#include "Components/ProgressionComponent.h"
 #include "GameFramework/PlayerController.h"
 
 void UUIQuestWindow::UpdateQuestList()
@@ -26,6 +27,9 @@ void UUIQuestWindow::UpdateQuestList()
 
 	UQuestComponent* QuestComp = PC->GetPawn()->FindComponentByClass<UQuestComponent>();
 	if (!QuestComp) return;
+
+    UProgressionComponent* ProgComp = PC->GetPawn()->FindComponentByClass<UProgressionComponent>();
+    int32 PlayerLevel = ProgComp ? ProgComp->CurrentLevel : 1;
 
 	for (UQuestDataAsset* QuestAsset : AllGameQuests)
 	{
@@ -51,9 +55,12 @@ void UUIQuestWindow::UpdateQuestList()
 			}
 			else if (!bIsActive && !bIsCompleted && AvailableQuestsContainer)
 			{
-				FActiveQuest AvailableDummy(QuestAsset);
-				NewSlot->SetupSlot(AvailableDummy);
-				AvailableQuestsContainer->AddChild(NewSlot);
+                if (PlayerLevel >= QuestAsset->RequiredLevel)
+                {
+                    FActiveQuest AvailableDummy(QuestAsset);
+                    NewSlot->SetupSlot(AvailableDummy);
+                    AvailableQuestsContainer->AddChild(NewSlot);
+                }
 			}
 
 			NewSlot->OnQuestSlotClicked.AddDynamic(this, &UUIQuestWindow::OnQuestSelected);
@@ -251,6 +258,7 @@ void UUIQuestWindow::ClearDetailsUI()
 {
 	if (Txt_DetailName) Txt_DetailName->SetText(FText::FromString(TEXT("Selecciona una misión")));
 	if (Txt_DetailDescription) Txt_DetailDescription->SetText(FText::GetEmpty());
+	if (Txt_QuestType) Txt_QuestType->SetText(FText::GetEmpty());
 	if (Txt_GiverNPC) Txt_GiverNPC->SetText(FText::GetEmpty());
 	if (Txt_ReceiverNPC) Txt_ReceiverNPC->SetText(FText::GetEmpty());
 	if (Txt_QuestStatus) Txt_QuestStatus->SetText(FText::GetEmpty());

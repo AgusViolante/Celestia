@@ -5,6 +5,7 @@
 #include "Components/Widget.h"
 #include "Quests/QuestComponent.h"
 #include "GameFramework/PlayerController.h"
+#include "Components/ProgressionComponent.h"
 
 void UUINPCDialogue::NativeConstruct()
 {
@@ -52,9 +53,37 @@ void UUINPCDialogue::SetupUI(ANPCBase* InNPC, AActor* InInteractor)
 			}
 		}
 
+		bIsTalking = false;
+		if (!bShowQuestBtn) // Si no estamos entregando nada
+		{
+			for (const FActiveQuest& ActiveQuest : QuestComp->ActiveQuests)
+			{
+				if (ActiveQuest.bIsReadyToTurnIn) continue;
+
+				for (const FQuestObjective& Obj : ActiveQuest.CurrentObjectives)
+				{
+					if (Obj.ObjectiveType == EObjectiveType::Talk && Obj.TargetID == CurrentNPC->NPC_ID && Obj.CurrentAmount < Obj.RequiredAmount)
+					{
+						bShowQuestBtn = true;
+						bIsTalking = true;
+						ActiveDialogueLines = Obj.DialogueLines;
+						CurrentLineIndex = 0;
+						TalkNPC_ID = CurrentNPC->NPC_ID;
+						QuestBtnText = TEXT("Hablar");
+						break;
+					}
+				}
+				if (bIsTalking) break;
+			}
+		}
 		// 2. Si no entregamos nada, ¿hay una misión nueva para dar?
 		if (!bShowQuestBtn)
 		{
+			int32 PlayerCurrentLevel = 1;
+			if (UProgressionComponent* ProgComp = CurrentInteractor->FindComponentByClass<UProgressionComponent>())
+			{
+				PlayerCurrentLevel = ProgComp->CurrentLevel;
+			}
 			for (UQuestDataAsset* QuestToGive : CurrentNPC->AvailableQuests)
 			{
 				if (QuestToGive && QuestToGive->GiverNPC_ID == CurrentNPC->NPC_ID)
@@ -97,6 +126,27 @@ void UUINPCDialogue::SetupUI(ANPCBase* InNPC, AActor* InInteractor)
 
 void UUINPCDialogue::OnQuestClicked()
 {
+	if (bIsTalking)
+	{
+		if (Panel_Main) Panel_Main->SetVisibility(ESlateVisibility::Collapsed);
+		if (Panel_QuestDetails) Panel_QuestDetails->SetVisibility(ESlateVisibility::Visible);
+
+		if (Txt_QuestTitle) Txt_QuestTitle->SetText(CurrentNPC->NPC_Name); 
+
+		if (ActiveDialogueLines.IsValidIndex(CurrentLineIndex) && Txt_QuestLore)
+		{
+			Txt_QuestLore->SetText(ActiveDialogueLines[CurrentLineIndex]);
+		}
+
+		if (Btn_DeclineQuest) Btn_DeclineQuest->SetVisibility(ESlateVisibility::Collapsed); 
+
+		if (Txt_AcceptBtn)
+		{
+			if (ActiveDialogueLines.Num() > 1) Txt_AcceptBtn->SetText(FText::FromString(TEXT("Siguiente...")));
+			else Txt_AcceptBtn->SetText(FText::FromString(TEXT("Terminar")));
+		}
+		return; 
+	}
 	if (!PendingQuest) return;
 
 	// Ocultamos el saludo y mostramos el Lore
@@ -120,6 +170,29 @@ void UUINPCDialogue::OnQuestClicked()
 
 void UUINPCDialogue::OnAcceptQuestClicked()
 {
+	if (bIsTalking)
+	{
+		CurrentLineIndex++;
+
+		if (CurrentLineIndex < ActiveDialogueLines.Num())
+		{
+			if (Txt_QuestLore) Txt_QuestLore->SetText(ActiveDialogueLines[CurrentLineIndex]);
+
+			if (CurrentLineIndex == ActiveDialogueLines.Num() - 1)
+			{
+				if (Txt_AcceptBtn) Txt_AcceptBtn->SetText(FText::FromString(TEXT("Terminar")));
+			}
+		}
+		else
+		{
+			if (UQuestComponent* QuestComp = CurrentInteractor->FindComponentByClass<UQuestComponent>())
+			{
+				QuestComp->UpdateObjective(EObjectiveType::Talk, TalkNPC_ID, nullptr, 1);
+			}
+			OnLeaveClicked();
+		}
+		return; 
+	}
 	if (UQuestComponent* QuestComp = CurrentInteractor->FindComponentByClass<UQuestComponent>())
 	{
 		if (bIsTurningIn)
@@ -131,12 +204,12 @@ void UUINPCDialogue::OnAcceptQuestClicked()
 			QuestComp->AcceptQuest(PendingQuest);
 		}
 	}
-	OnLeaveClicked(); // Cerramos la UI
+	OnLeaveClicked(); 
 }
 
 void UUINPCDialogue::OnDeclineQuestClicked()
 {
-	// Si rechaza, volvemos al menú principal del NPC
+	
 	if (Panel_QuestDetails) Panel_QuestDetails->SetVisibility(ESlateVisibility::Collapsed);
 	if (Panel_Main) Panel_Main->SetVisibility(ESlateVisibility::Visible);
 }

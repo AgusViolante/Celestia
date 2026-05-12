@@ -94,6 +94,13 @@ private:
 	UPROPERTY()
 	AActor* CurrentInteractor;
 
-	UPROPERTY() UQuestDataAsset* PendingQuest;
+	UPROPERTY() 
+	UQuestDataAsset* PendingQuest;
+
 	bool bIsTurningIn = false;
+
+	bool bIsTalking = false;
+	TArray<FText> ActiveDialogueLines;
+	int32 CurrentLineIndex = 0;
+	FName TalkNPC_ID;
 };
