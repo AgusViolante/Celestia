@@ -106,6 +106,8 @@ void AEnemyBase::Die_Implementation()
 	if (bAlreadyDied) return;
 	bAlreadyDied = true;
 
+	GetWorldTimerManager().ClearTimer(StunTimerHandle);
+
 	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
 	{
 		MoveComp->DisableMovement();
@@ -284,7 +286,6 @@ void AEnemyBase::ReleaseStun()
 
 	bIsStunned = false;
 
-	
 	if (GetCharacterMovement())
 	{
 		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
@@ -294,24 +295,18 @@ void AEnemyBase::ReleaseStun()
 	{
 		if (UBrainComponent* BrainComp = AIC->GetBrainComponent())
 		{
-			
 			BrainComp->ResumeLogic("Stunned");
 		}
 
 		ACharacter* PlayerChar = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
 		if (PlayerChar)
 		{
-			
 			if (UBlackboardComponent* BB = AIC->GetBlackboardComponent())
 			{
-				
 				BB->ClearValue(TEXT("TargetActor"));
-
-				
 				BB->SetValueAsObject(TEXT("TargetActor"), PlayerChar);
 			}
 
-			
 			if (AEnemyAIController* MyAIC = Cast<AEnemyAIController>(AIC))
 			{
 				MyAIC->ReceiveDamageAggro(PlayerChar);
@@ -324,9 +319,9 @@ void AEnemyBase::ReleaseStun()
 		GetMesh()->bPauseAnims = false;
 	}
 
-	if (ActiveStunVFX)
+	if (IsValid(ActiveStunVFX))
 	{
 		ActiveStunVFX->DestroyComponent();
-		ActiveStunVFX = nullptr;
 	}
+	ActiveStunVFX = nullptr;
 }

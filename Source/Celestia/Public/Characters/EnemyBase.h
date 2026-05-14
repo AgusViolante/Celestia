@@ -76,6 +76,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Quests")
 	FName EnemyQuestID;
 
+
 protected:
 	virtual void BeginPlay() override;
 
