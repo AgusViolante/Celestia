@@ -31,12 +31,11 @@ void UStaminaComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 			OnStaminaExhausted.Broadcast();
 		}
 	}
-	else if (CurrentStamina < MaxStamina)
+	else if (CurrentStamina < MaxStamina && bCanRegen)
 	{
 		CurrentStamina += RegenPerSecond * DeltaTime;
 		CurrentStamina = FMath::Min(MaxStamina, CurrentStamina);
 	}
-
 	
 	if (!FMath::IsNearlyEqual(OldStamina, CurrentStamina))
 	{

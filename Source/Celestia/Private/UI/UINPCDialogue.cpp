@@ -84,31 +84,12 @@ void UUINPCDialogue::SetupUI(ANPCBase* InNPC, AActor* InInteractor)
 
 		if (!bShowQuestBtn)
 		{
-			
-			int32 PlayerCurrentLevel = 1;
-			APawn* PlayerPawn = GetOwningPlayerPawn();
-			if (PlayerPawn)
-			{
-				if (UProgressionComponent* ProgComp = PlayerPawn->FindComponentByClass<UProgressionComponent>())
-				{
-					PlayerCurrentLevel = ProgComp->CurrentLevel;
-				}
-			}
 
 			for (UQuestDataAsset* QuestToGive : CurrentNPC->AvailableQuests)
 			{
 				if (QuestToGive && QuestToGive->GiverNPC_ID == CurrentNPC->NPC_ID)
 				{
-					if (PlayerCurrentLevel < QuestToGive->RequiredLevel)
-					{
-						continue;
-					}
-
-					bool bAlreadyHas = false;
-					for (const FActiveQuest& AQ : QuestComp->ActiveQuests) { if (AQ.QuestData == QuestToGive) bAlreadyHas = true; }
-					bool bCompleted = QuestComp->IsQuestCompleted(QuestToGive->QuestID);
-
-					if (!bAlreadyHas && !bCompleted)
+					if (QuestComp->CanAcceptQuest(QuestToGive))
 					{
 						bShowQuestBtn = true;
 						PendingQuest = QuestToGive;

@@ -233,6 +233,38 @@ protected:
 	void OnStunEnded();
 
 	void ReleaseStun();
+	// --- AHOGO (DROWNING) ---
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Stamina|Swimming")
+	float DrownDamagePerTick = 10.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Stamina|Swimming")
+	float DrownTickInterval = 1.0f;
+
+	FTimerHandle DrownTimerHandle;
+
+	UFUNCTION()
+	void DrownTick();
+
+	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode) override;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Stamina|Swimming")
+	float SwimStaminaCostPerSecond = 0.5f;
+
+	// --- DETECCIÓN DE AGUA IRREGULAR ---
+	UFUNCTION()
+	void OnWaterOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void OnWaterOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UPROPERTY()
+	int32 OverlappedWaterBodies = 0;
+
+	void CheckWaterLevel();
+
+	UPROPERTY()
+	float CurrentWaterSurfaceZ = 0.f;
 
 protected:
 
@@ -273,6 +305,8 @@ public:
 
 	virtual void Landed(const FHitResult& Hit) override;
 	
+	UPROPERTY(BlueprintReadOnly, Category = "Swimming")
+	bool bIsSwimmingCustom = false;
 
 public:
 

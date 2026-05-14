@@ -125,6 +125,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Info")
 	FText ReceiverName;
 
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Objectives")
 	TArray<FQuestObjective> Objectives;
 
@@ -133,4 +134,11 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Info", meta = (ClampMin = "1"))
 	int32 RequiredLevel = 1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Info")
+	UQuestDataAsset* PrerequisiteQuest;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Chain")
+	UQuestDataAsset* NextQuest;
+
 };

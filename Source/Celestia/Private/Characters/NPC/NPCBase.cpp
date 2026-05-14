@@ -63,15 +63,7 @@ void ANPCBase::ProcessQuestInteraction(AActor* Interactor)
 	{
 		if (QuestToGive && QuestToGive->GiverNPC_ID == NPC_ID)
 		{
-			bool bAlreadyHasQuest = false;
-			for (const FActiveQuest& ActiveQuest : QuestComp->ActiveQuests)
-			{
-				if (ActiveQuest.QuestData == QuestToGive) bAlreadyHasQuest = true;
-			}
-
-			bool bAlreadyCompleted = QuestComp->CompletedQuestIDs.Contains(QuestToGive->QuestID);
-
-			if (!bAlreadyHasQuest && !bAlreadyCompleted)
+			if (QuestComp->CanAcceptQuest(QuestToGive))
 			{
 				QuestComp->AcceptQuest(QuestToGive);
 				return;

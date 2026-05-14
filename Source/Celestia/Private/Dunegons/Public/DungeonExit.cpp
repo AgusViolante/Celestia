@@ -1,6 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "Dunegons/Public/DungeonEntrance.h"
+#include "Dunegons/Public/DungeonExit.h"
 #include "Components/BoxComponent.h"
 #include "Quests/QuestComponent.h"
 #include "Blueprint/UserWidget.h"
@@ -8,7 +8,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Components/InputComponent.h"
 
-ADungeonEntrance::ADungeonEntrance()
+ADungeonExit::ADungeonExit()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
@@ -18,28 +18,28 @@ ADungeonEntrance::ADungeonEntrance()
 	TriggerZone->SetCollisionProfileName(TEXT("Trigger"));
 }
 
-void ADungeonEntrance::BeginPlay()
+void ADungeonExit::BeginPlay()
 {
 	Super::BeginPlay();
 
-	TriggerZone->OnComponentBeginOverlap.AddDynamic(this, &ADungeonEntrance::OnOverlapBegin);
-	TriggerZone->OnComponentEndOverlap.AddDynamic(this, &ADungeonEntrance::OnOverlapEnd);
+	TriggerZone->OnComponentBeginOverlap.AddDynamic(this, &ADungeonExit::OnOverlapBegin);
+	TriggerZone->OnComponentEndOverlap.AddDynamic(this, &ADungeonExit::OnOverlapEnd);
 }
 
-bool ADungeonEntrance::HasDungeonQuest(AActor* PlayerActor)
+bool ADungeonExit::IsDungeonQuestComplete(AActor* PlayerActor)
 {
 	UQuestComponent* QuestComp = PlayerActor->FindComponentByClass<UQuestComponent>();
 	if (!QuestComp) return false;
 
 	for (const FActiveQuest& Quest : QuestComp->ActiveQuests)
 	{
-		if (Quest.bIsReadyToTurnIn) continue;
-
 		for (const FQuestObjective& Obj : Quest.CurrentObjectives)
 		{
+			// Busca el objetivo de esta mazmorra
 			if (Obj.ObjectiveType == EObjectiveType::Dungeon && Obj.TargetID == DungeonID)
 			{
-				if (Obj.CurrentAmount < Obj.RequiredAmount)
+				// Si la cantidad actual es igual o mayor a la requerida, está completa
+				if (Obj.CurrentAmount >= Obj.RequiredAmount)
 				{
 					return true;
 				}
@@ -49,11 +49,12 @@ bool ADungeonEntrance::HasDungeonQuest(AActor* PlayerActor)
 	return false;
 }
 
-void ADungeonEntrance::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void ADungeonExit::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (OtherActor && OtherActor->IsA(ACharacter::StaticClass()))
 	{
-		if (HasDungeonQuest(OtherActor))
+		// Solo permite interactuar si la misión de esta mazmorra está completa
+		if (IsDungeonQuestComplete(OtherActor))
 		{
 			if (PromptWidgetClass && !PromptInstance)
 			{
@@ -72,14 +73,14 @@ void ADungeonEntrance::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActo
 
 				if (InputComponent)
 				{
-					InputComponent->BindKey(EKeys::E, IE_Pressed, this, &ADungeonEntrance::InteractToEnter);
+					InputComponent->BindKey(EKeys::E, IE_Pressed, this, &ADungeonExit::InteractToExit);
 				}
 			}
 		}
 	}
 }
 
-void ADungeonEntrance::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+void ADungeonExit::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	if (OtherActor && OtherActor->IsA(ACharacter::StaticClass()))
 	{
@@ -96,7 +97,7 @@ void ADungeonEntrance::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor*
 	}
 }
 
-void ADungeonEntrance::InteractToEnter()
+void ADungeonExit::InteractToExit()
 {
 	if (TeleportDestination)
 	{
@@ -118,3 +119,4 @@ void ADungeonEntrance::InteractToEnter()
 		}
 	}
 }
+

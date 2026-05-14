@@ -89,6 +89,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Quests | UI")
 	bool IsQuestCompleted(FName QuestIDToCheck) const;
 
+	UFUNCTION(BlueprintPure, Category = "Quests | Validation")
+	bool CanAcceptQuest(UQuestDataAsset* QuestToCheck) const;
+
 	UPROPERTY(BlueprintAssignable, Category = "Quests | Events")
 	FOnQuestUntrackedSignature OnQuestUntracked;
 
@@ -113,4 +116,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Quests")
 	void TurnInQuest(UQuestDataAsset* QuestToTurnIn);
 
+private:
+	
+	void CheckDungeonCompletion();
 };

@@ -65,6 +65,7 @@ void UDashComponent::OnDashInput(const FInputActionInstance& Instance)
 
 void UDashComponent::TriggerDash()
 {
+
     if (!bCanDash) return;
 
     ACharacter* OwnerChar = Cast<ACharacter>(GetOwner());

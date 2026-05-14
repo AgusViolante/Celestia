@@ -45,6 +45,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Stamina")
 	bool HasEnoughStamina(float MinimumRequired = 1.0f) const;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stamina")
+	bool bCanRegen = true;
+
 protected:
 	virtual void BeginPlay() override;
 

@@ -84,6 +84,11 @@ ACelestiaCharacter::ACelestiaCharacter()
 	StatsComponent = CreateDefaultSubobject<UStatsComponent>(TEXT("StatsComponent"));
 	ManaComponent = CreateDefaultSubobject<UManaComponent>(TEXT("ManaComponent"));
 
+	GetCharacterMovement()->GetNavAgentPropertiesRef().bCanSwim = true;
+	GetCharacterMovement()->MaxSwimSpeed = 400.f; // Velocidad bajo el agua
+	GetCharacterMovement()->Buoyancy = 1.1f; // Flotabilidad (mayor a 1 flota hacia arriba, menor a 1 se hunde)
+	GetCharacterMovement()->BrakingDecelerationSwimming = 1000.f; // Fricción del agua
+
 }
 
 void ACelestiaCharacter::BeginPlay()
@@ -91,6 +96,8 @@ void ACelestiaCharacter::BeginPlay()
 
 	Super::BeginPlay();
 
+	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &ACelestiaCharacter::OnWaterOverlapBegin);
+	GetCapsuleComponent()->OnComponentEndOverlap.AddDynamic(this, &ACelestiaCharacter::OnWaterOverlapEnd);
 
 	if (IMC_Default)
 	{
@@ -223,6 +230,7 @@ void ACelestiaCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 		}
 		if (DashComponent && DashComponent->DashInputAction)
 		{
+
 			DashComponent->RegisterMappingContext();
 			DashComponent->BindInput(EnhancedInputComponent);
 
@@ -259,28 +267,54 @@ void ACelestiaCharacter::Look(const FInputActionValue& Value)
 	// route the input
 	DoLook(LookAxisVector.X, LookAxisVector.Y);
 }
-
 void ACelestiaCharacter::DoMove(float Right, float Forward)
 {
-	if (bIsStunned) return;
-	if (GetController() != nullptr)
+	if (bIsStunned || !GetController()) return;
+
+	const FRotator Rotation = GetController()->GetControlRotation();
+
+	if (bIsSwimmingCustom)
 	{
-		// find out which way is forward
-		const FRotator Rotation = GetController()->GetControlRotation();
+		FVector ForwardDirection = FRotationMatrix(Rotation).GetUnitAxis(EAxis::X);
+		const FVector RightDirection = FRotationMatrix(Rotation).GetUnitAxis(EAxis::Y);
+
+		// --- EL CONTROL DE LÍMITE QUE PROPUSISTE ---
+		float CapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+		// Calculamos el tope: La superficie del agua menos un margen para que no asome toda la cápsula
+		float WaterTopLimit = CurrentWaterSurfaceZ - (CapsuleHalfHeight * 0.2f);
+
+		// Si el personaje ya está en la superficie (o más arriba)
+		if (GetActorLocation().Z >= WaterTopLimit)
+		{
+			// Si intenta seguir subiendo (Z positivo), anulamos el eje Z
+			if (ForwardDirection.Z > 0.f)
+			{
+				ForwardDirection.Z = 0.f;
+				// Normalizamos para no perder velocidad al ir hacia adelante por la superficie
+				ForwardDirection.Normalize();
+			}
+		}
+
+		AddMovementInput(ForwardDirection, Forward);
+		AddMovementInput(RightDirection, Right);
+
+		// Gravedad suave si nos quedamos sin estamina
+		if (StaminaComponent && !StaminaComponent->HasEnoughStamina(0.1f))
+		{
+			AddMovementInput(FVector(0.f, 0.f, -1.f), 0.3f);
+		}
+	}
+	else
+	{
+		// MODO TIERRA
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
-
-		// get forward vector
 		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-
-		// get right vector 
 		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
-		// add movement 
 		AddMovementInput(ForwardDirection, Forward);
 		AddMovementInput(RightDirection, Right);
 	}
 }
-
 void ACelestiaCharacter::DoLook(float Yaw, float Pitch)
 {
 	if (GetController() != nullptr)
@@ -496,13 +530,26 @@ void ACelestiaCharacter::Server_SetSprinting_Implementation(bool bIsSprinting)
 		}
 	}
 }
-
 void ACelestiaCharacter::OnStaminaExhausted()
 {
-	// Si la estamina llega a 0, forzamos mecánicamente el fin del sprint
 	StopSprinting();
-}
 
+	if (bIsSwimmingCustom)
+	{
+		// Solo reducimos drásticamente la velocidad, pero seguimos "Volando"
+		GetCharacterMovement()->MaxFlySpeed = 150.f;
+
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 4.f, FColor::Red, TEXT("Te estas hundiendo"));
+		}
+
+		if (!GetWorldTimerManager().IsTimerActive(DrownTimerHandle))
+		{
+			GetWorldTimerManager().SetTimer(DrownTimerHandle, this, &ACelestiaCharacter::DrownTick, DrownTickInterval, true);
+		}
+	}
+}
 void ACelestiaCharacter::OnDeath(AActor* DeadOwner)
 {
 
@@ -559,6 +606,10 @@ void ACelestiaCharacter::Tick(float DeltaTime)
 	{
 		// Si estamos pisando suelo firme, anclamos el registro a nuestra altura actual
 		MaxZHeightDuringFall = GetActorLocation().Z;
+	}
+	if (OverlappedWaterBodies > 0)
+	{
+		CheckWaterLevel();
 	}
 
 }
@@ -792,6 +843,172 @@ void ACelestiaCharacter::ReceiveQuestRewards(int32 CoinsReward, const TArray<FIt
 			{
 				GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Green, FString::Printf(TEXT("Recibiste: %s x%d"), *ItemName, Reward.Quantity));
 			}
+		}
+	}
+}
+void ACelestiaCharacter::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode)
+{
+	// Solo dejamos el Super, borramos todo el código del agua que había acá
+	Super::OnMovementModeChanged(PrevMovementMode, PreviousCustomMode);
+}
+void ACelestiaCharacter::DrownTick()
+{
+	if (HealthComponent && !HealthComponent->IsDead())
+	{
+		// Aplicamos daño. 
+		// Amount = DrownDamagePerTick | bIsCritical = false | bIgnoreDefense = true (el ahogo ignora armadura)
+		HealthComponent->TakeDamage(DrownDamagePerTick, false, true);
+
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 1.5f, FColor::Red, TEXT("*Glup glup... Daño por ahogo*"));
+		}
+	}
+	else
+	{
+		GetWorldTimerManager().ClearTimer(DrownTimerHandle);
+	}
+}
+void ACelestiaCharacter::OnWaterOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (OtherActor && OtherActor != this && OtherComp)
+	{
+		FString ActorClassName = OtherActor->GetClass()->GetName();
+		FName CollisionProfile = OtherComp->GetCollisionProfileName();
+
+		if (ActorClassName.Contains(TEXT("WaterBody")) || CollisionProfile == FName("WaterBodyCollision"))
+		{
+			OverlappedWaterBodies++;
+
+			if (OverlappedWaterBodies == 1)
+			{
+				bIsSwimmingCustom = true;
+				GetCharacterMovement()->SetMovementMode(MOVE_Flying);
+				GetCharacterMovement()->MaxFlySpeed = 400.f;
+				GetCharacterMovement()->BrakingDecelerationFlying = 1500.f;
+
+				// Iniciamos el drenaje de estamina acá
+				if (StaminaComponent)
+				{
+					StaminaComponent->StartDraining(SwimStaminaCostPerSecond);
+					StaminaComponent->bCanRegen = false;
+				}
+			}
+		}
+	}
+}
+
+void ACelestiaCharacter::OnWaterOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if (OtherActor && OtherActor != this && OtherComp)
+	{
+		FString ActorClassName = OtherActor->GetClass()->GetName();
+		FName CollisionProfile = OtherComp->GetCollisionProfileName();
+
+		if (ActorClassName.Contains(TEXT("WaterBody")) || CollisionProfile == FName("WaterBodyCollision"))
+		{
+			OverlappedWaterBodies--;
+
+			if (OverlappedWaterBodies <= 0)
+			{
+				OverlappedWaterBodies = 0;
+				bIsSwimmingCustom = false;
+				GetCharacterMovement()->SetMovementMode(MOVE_Falling);
+
+				// Restauramos la velocidad de caminar normal por si se había ahogado
+				GetCharacterMovement()->MaxWalkSpeed = 500.f;
+
+				// Detenemos la estamina acá
+				if (StaminaComponent)
+				{
+					StaminaComponent->StopDraining();
+					StaminaComponent->bCanRegen = true;
+				}
+
+				// FUNDAMENTAL: Obligamos a que se detenga el daño al salir del agua
+				GetWorldTimerManager().ClearTimer(DrownTimerHandle);
+			}
+		}
+	}
+}
+void ACelestiaCharacter::CheckWaterLevel()
+{
+	if (GetCharacterMovement()->MovementMode == MOVE_Walking && bIsSwimmingCustom)
+	{
+		bIsSwimmingCustom = false;
+		if (StaminaComponent)
+		{
+			StaminaComponent->StopDraining();
+			StaminaComponent->bCanRegen = true;
+		}
+		GetWorldTimerManager().ClearTimer(DrownTimerHandle);
+		return; 
+	}
+	FVector Start = GetActorLocation() + FVector(0.f, 0.f, 5000.f);
+	FVector End = GetActorLocation() - FVector(0.f, 0.f, 200.f);
+
+	FHitResult HitResult;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+
+	// Trazamos buscando SOLO el agua
+	if (GetWorld()->LineTraceSingleByProfile(HitResult, Start, End, FName("WaterBodyCollision"), Params))
+	{
+		CurrentWaterSurfaceZ = HitResult.ImpactPoint.Z;
+
+		float WaterSurfaceZ = HitResult.ImpactPoint.Z;
+		float CapsuleHalfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+
+		float FeetZ = GetActorLocation().Z - (CapsuleHalfHeight * 1.1f);
+		float ChestZ = GetActorLocation().Z + (CapsuleHalfHeight * 0.4f);
+
+		if (!bIsSwimmingCustom && WaterSurfaceZ >= ChestZ)
+		{
+			bIsSwimmingCustom = true;
+			if (GetCharacterMovement()->MovementMode != MOVE_Flying)
+			{
+				GetCharacterMovement()->SetMovementMode(MOVE_Flying);
+				GetCharacterMovement()->BrakingDecelerationFlying = 400.f;
+				GetCharacterMovement()->MaxFlySpeed = 400.f;
+			}
+
+			if (StaminaComponent)
+			{
+				StaminaComponent->StartDraining(SwimStaminaCostPerSecond);
+				StaminaComponent->bCanRegen = false;
+			}
+		}
+		else if (bIsSwimmingCustom && WaterSurfaceZ < FeetZ)
+		{
+			bIsSwimmingCustom = false;
+			if (GetCharacterMovement()->MovementMode != MOVE_Falling)
+			{
+				GetCharacterMovement()->SetMovementMode(MOVE_Falling);
+			}
+
+			if (StaminaComponent)
+			{
+				StaminaComponent->StopDraining();
+				StaminaComponent->bCanRegen = true;
+			}
+			GetWorldTimerManager().ClearTimer(DrownTimerHandle);
+		}
+	}
+	else
+	{
+		// Si el rayo bajó desde 50 metros y NO encontró agua, forzamos la salida
+		// por si el Overlap se quedó bugeado en la orilla.
+		if (bIsSwimmingCustom)
+		{
+			bIsSwimmingCustom = false;
+			GetCharacterMovement()->SetMovementMode(MOVE_Falling);
+
+			if (StaminaComponent)
+			{
+				StaminaComponent->StopDraining();
+				StaminaComponent->bCanRegen = true;
+			}
+			GetWorldTimerManager().ClearTimer(DrownTimerHandle);
 		}
 	}
 }

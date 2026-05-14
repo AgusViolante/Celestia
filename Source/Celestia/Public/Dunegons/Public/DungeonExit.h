@@ -4,26 +4,27 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "DungeonEntrance.generated.h"
+#include "DungeonExit.generated.h"
 
 class UBoxComponent;
 class UUserWidget;
 
 UCLASS()
-class CELESTIA_API ADungeonEntrance : public AActor
+class CELESTIA_API ADungeonExit : public AActor
 {
 	GENERATED_BODY()
 
 public:
-	ADungeonEntrance();
+	ADungeonExit();
 
-	UPROPERTY(EditAnywhere, Category = "Dungeon Setup")
+	// Identificador de la mazmorra para verificar la misión
+	UPROPERTY(EditAnywhere, Category = "Exit Setup")
 	FName DungeonID;
 
-	UPROPERTY(EditAnywhere, Category = "Dungeon Setup")
+	UPROPERTY(EditAnywhere, Category = "Exit Setup")
 	AActor* TeleportDestination;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Dungeon Setup | UI")
+	UPROPERTY(EditDefaultsOnly, Category = "Exit Setup | UI")
 	TSubclassOf<UUserWidget> PromptWidgetClass;
 
 protected:
@@ -42,8 +43,9 @@ protected:
 	void OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	UFUNCTION()
-	void InteractToEnter();
+	void InteractToExit();
 
 private:
-	bool HasDungeonQuest(AActor* PlayerActor);
+	// Nueva función para verificar si se completó
+	bool IsDungeonQuestComplete(AActor* PlayerActor);
 };
