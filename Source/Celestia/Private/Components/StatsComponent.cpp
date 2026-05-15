@@ -49,7 +49,7 @@ void UStatsComponent::RecalculateDerivedStats()
 	OnStatChanged.Broadcast(ERPGStatType::MagicDefense, MagicDefense.GetTotal());
 
 	// Críticos
-	MeleeCrit.BaseValue = 100.0f;
+	MeleeCrit.BaseValue = Strength.GetTotal() * 0.5f;
 	OnStatChanged.Broadcast(ERPGStatType::MeleeCrit, MeleeCrit.GetTotal());
 
 	MagicCrit.BaseValue = Wisdom.GetTotal() * 0.5f;
