@@ -6,6 +6,7 @@
 
 #include "CoreMinimal.h"
 #include "Characters/MeleeEnemy.h" 
+#include "Blueprint/UserWidget.h"
 #include "BossEnemy.generated.h"
 
 class AMagicProjectile;
@@ -68,4 +69,26 @@ public:
 	UFUNCTION()
 	void OnBossHealthChanged(UHealthComponent* InHealthComp, float NewHealth, float MaxHealth, float HealthDelta);
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
+	class USphereComponent* ProximitySphere;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<class UUserWidget> BossHUDClass;
+
+	virtual void Die_Implementation() override;
+
+private:
+	UPROPERTY()
+	class UUserWidget* BossHUDInstance;
+
+
+protected:
+
+	virtual void BeginPlay() override;
+
+	UFUNCTION()
+	void OnProximityOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void OnProximityOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 };

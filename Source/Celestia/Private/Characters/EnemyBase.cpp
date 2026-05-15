@@ -217,12 +217,12 @@ void AEnemyBase::InitializeEnemyStats()
 		DexGrowth = 1.0f; IntGrowth = 1.0f; EndGrowth = 0.5f;
 		break;
 	case EEnemyClassType::Boss:
-		BaseStr = 150.0f;
-		BaseEnd = 300.0f;
+		BaseStr = 10.0f;
+		BaseEnd = 30.0f;
 		BaseDex = 3.0f; BaseInt = 3.0f; BaseWis = 3.0f;
 
-		StrGrowth = 25.0f;
-		EndGrowth = 50.0f;
+		StrGrowth = 2.0f;
+		EndGrowth = 5.0f;
 		DexGrowth = 1.0f; IntGrowth = 1.0f; WisGrowth = 1.0f;
 		break;
 	case EEnemyClassType::Tank:

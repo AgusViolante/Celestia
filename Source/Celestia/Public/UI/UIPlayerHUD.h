@@ -92,4 +92,26 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Quests | UI")
 	void ClearTrackedQuest();
 
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UProgressBar* BossHealthBar;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* BossNameText;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UWidget* BossUIContainer;
+
+	UFUNCTION(BlueprintCallable, Category = "UI | Boss")
+	void ShowBossUI(const FString& BossName, float CurrentHealth, float MaxHealth);
+
+	UFUNCTION(BlueprintCallable, Category = "UI | Boss")
+	void UpdateBossHealth(float CurrentHealth, float MaxHealth);
+
+	UFUNCTION(BlueprintCallable, Category = "UI | Boss")
+	void HideBossUI();
+
+	UPROPERTY(Transient, meta = (BindWidgetAnim))
+	class UWidgetAnimation* BossFadeInAnim;
+
 };

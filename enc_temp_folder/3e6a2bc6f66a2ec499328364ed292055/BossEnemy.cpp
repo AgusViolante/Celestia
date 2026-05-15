@@ -10,8 +10,6 @@
 #include "Components/StatsComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
-#include "Components/CapsuleComponent.h"
-#include "Components/SkeletalMeshComponent.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "NavigationSystem.h"
@@ -48,15 +46,6 @@ ABossEnemy::ABossEnemy()
 	if (HealthComponent)
 	{
 		HealthComponent->OnHealthChanged.AddDynamic(this, &ABossEnemy::OnBossHealthChanged);
-	}
-	if (GetCapsuleComponent())
-	{
-		GetCapsuleComponent()->CanCharacterStepUpOn = ECB_No;
-		GetCapsuleComponent()->SetWalkableSlopeOverride(FWalkableSlopeOverride(WalkableSlope_Unwalkable, 0.f));
-	}
-	if (GetMesh())
-	{
-		GetMesh()->CanCharacterStepUpOn = ECB_No;
 	}
 
 	ProximitySphere = CreateDefaultSubobject<USphereComponent>(TEXT("ProximitySphere"));
@@ -108,7 +97,7 @@ void ABossEnemy::EnterPhase2()
 		PushDirection.Normalize();
 
 		float ForceHorizontal = 5000.f;
-		float ForceVertical = 100.f;    
+		float ForceVertical = 500.f;    
 
 		FVector FinalLaunchVelocity = (PushDirection * ForceHorizontal) + FVector(0.f, 0.f, ForceVertical);
 

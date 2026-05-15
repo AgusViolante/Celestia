@@ -175,3 +175,56 @@ void UUIPlayerHUD::ClearTrackedQuest()
 		QuestObjectivesContainer->ClearChildren();
 	}
 }
+void UUIPlayerHUD::ShowBossUI(const FString& BossName, float CurrentHealth, float MaxHealth)
+{
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, TEXT("HUD: ShowBossUI ejecutado"));
+
+	if (BossUIContainer)
+	{
+		BossUIContainer->SetVisibility(ESlateVisibility::Visible);
+		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, TEXT("HUD: Contenedor puesto en VISIBLE"));
+	}
+
+	if (BossNameText)
+	{
+		BossNameText->SetText(FText::FromString(BossName));
+	}
+
+	UpdateBossHealth(CurrentHealth, MaxHealth);
+
+	if (BossUIContainer)
+	{
+		BossUIContainer->SetVisibility(ESlateVisibility::Visible);
+	}
+	else
+	{
+		if (BossHealthBar) BossHealthBar->SetVisibility(ESlateVisibility::Visible);
+		if (BossNameText) BossNameText->SetVisibility(ESlateVisibility::Visible);
+	}
+
+	if (BossFadeInAnim)
+	{
+		PlayAnimation(BossFadeInAnim);
+	}
+}
+
+void UUIPlayerHUD::UpdateBossHealth(float CurrentHealth, float MaxHealth)
+{
+	if (BossHealthBar && MaxHealth > 0.f)
+	{
+		BossHealthBar->SetPercent(CurrentHealth / MaxHealth);
+	}
+}
+
+void UUIPlayerHUD::HideBossUI()
+{
+	if (BossUIContainer)
+	{
+		BossUIContainer->SetVisibility(ESlateVisibility::Collapsed);
+	}
+	else
+	{
+		if (BossHealthBar) BossHealthBar->SetVisibility(ESlateVisibility::Collapsed);
+		if (BossNameText) BossNameText->SetVisibility(ESlateVisibility::Collapsed);
+	}
+}
