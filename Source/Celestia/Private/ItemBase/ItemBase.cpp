@@ -30,10 +30,8 @@ void AItemBase::Interact_Implementation(AActor* Interactor)
 
 	if (Interactor && Interactor->GetClass()->ImplementsInterface(UI_PickUp::StaticClass()))
 	{
-		// Le enviamos nuestros datos al jugador
 		II_PickUp::Execute_ReceiveItem(Interactor, Amount, ItemName);
 
-		// Nos destruimos del mundo
 		Destroy();
 	}
 }

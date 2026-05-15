@@ -104,13 +104,13 @@ void ABossEnemy::EnterPhase2()
 		{
 			PushDirection = GetActorForwardVector();
 		}
-
+		PushDirection.Z = 0.f;
 		PushDirection.Normalize();
 
 		float ForceHorizontal = 5000.f;
-		float ForceVertical = 100.f;    
+		float ForceVertical = 0.f; 
 
-		FVector FinalLaunchVelocity = (PushDirection * ForceHorizontal) + FVector(0.f, 0.f, ForceVertical);
+		FVector FinalLaunchVelocity = (PushDirection * ForceHorizontal);
 
 		PlayerChar->LaunchCharacter(FinalLaunchVelocity, true, true);
 	}
