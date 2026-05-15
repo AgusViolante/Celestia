@@ -5,7 +5,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Characters/MeleeEnemy.h" // Heredamos de MeleeEnemy para tener los ataques físicos gratis
+#include "Characters/MeleeEnemy.h" 
 #include "BossEnemy.generated.h"
 
 class AMagicProjectile;
@@ -53,9 +53,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Boss | Phase")
 	void EnterPhase2();
 
-	// Sobrescribimos TakeDamage para leer constantemente la vida del jefe
-	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
-
 	// --- MECÁNICAS DE FASE 1 ---
 	UFUNCTION(BlueprintCallable, Category = "Boss | Combat")
 	void LeapTowardsPlayer();
@@ -67,5 +64,8 @@ public:
 	// Disparo en abanico (3 proyectiles)
 	UFUNCTION(BlueprintCallable, Category = "Combat | Magic")
 	void FireMagicSpread();
+
+	UFUNCTION()
+	void OnBossHealthChanged(UHealthComponent* InHealthComp, float NewHealth, float MaxHealth, float HealthDelta);
 
 };

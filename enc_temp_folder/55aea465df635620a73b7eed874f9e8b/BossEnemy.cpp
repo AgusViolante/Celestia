@@ -21,9 +21,6 @@ ABossEnemy::ABossEnemy()
 	
 	EnemyType = EEnemyClassType::Boss;
 
-	CurrentPhase = 1;
-
-	EnemyLevel = 10;
 	
 	bUseControllerRotationYaw = false;
 
@@ -60,25 +57,21 @@ void ABossEnemy::EnterPhase2()
 	{
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), PhaseTransitionVFX, GetActorLocation() - FVector(0.f, 0.f, 90.f), FRotator::ZeroRotator);
 	}
+
+	//Onda expansiva que empuja al jugador
 	ACharacter* PlayerChar = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
 	if (PlayerChar)
 	{
-		FVector PushDirection = PlayerChar->GetActorLocation() - GetActorLocation();
-		PushDirection.Z = 0.f;
-
-		if (PushDirection.SizeSquared() < 1.f)
+		float Distance = FVector::Dist(GetActorLocation(), PlayerChar->GetActorLocation());
+		if (Distance < 800.f) 
 		{
-			PushDirection = GetActorForwardVector();
+			FVector PushDirection = PlayerChar->GetActorLocation() - GetActorLocation();
+			PushDirection.Z = 0.f; 
+			PushDirection.Normalize();
+
+			
+			PlayerChar->LaunchCharacter((PushDirection * 2000.f) + FVector(0.f, 0.f, 800.f), true, true);
 		}
-
-		PushDirection.Normalize();
-
-		float ForceHorizontal = 5000.f;
-		float ForceVertical = 500.f;    
-
-		FVector FinalLaunchVelocity = (PushDirection * ForceHorizontal) + FVector(0.f, 0.f, ForceVertical);
-
-		PlayerChar->LaunchCharacter(FinalLaunchVelocity, true, true);
 	}
 
 	if (AAIController* AICon = Cast<AAIController>(GetController()))
@@ -139,19 +132,29 @@ void ABossEnemy::TeleportAway()
 // --- 4. DISPARO EN ABANICO (Fase 2) ---
 void ABossEnemy::FireMagicSpread()
 {
-	if (!ProjectileClass || bAlreadyDied) return;
-
-	// Salen desde el centro del jefe, un poco levantados para no chocar el piso
-	FVector SpawnLocation = GetActorLocation() + FVector(0.f, 0.f, 40.f);
-
-	// 360 grados divididos en 8 proyectiles = 45 grados de separación entre cada uno
-	float AngleStep = 360.0f / 15.0f;
-
-	for (int32 i = 0; i < 15; i++)
+	// 1. Verificamos si realmente asignaste el BP
+	if (!ProjectileClass)
 	{
-		// Tomamos la rotación base del jefe y le sumamos 45 grados por cada vuelta del loop
-		FRotator SpawnRotation = GetActorRotation();
-		SpawnRotation.Yaw += (AngleStep * i);
+		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("ERROR: PROJECTILE CLASS VACIO EN EL BP"));
+		return;
+	}
+
+	if (bAlreadyDied) return;
+
+	// 2. PARCHE SIN ANIMACIÓN: Disparamos desde el centro del jefe, pero 150 unidades hacia adelante y 80 hacia arriba (altura del pecho/cabeza) para que no choque con el piso.
+	FVector SpawnLocation = GetActorLocation() + (GetActorForwardVector() * 150.f) + FVector(0.f, 0.f, 80.f);
+
+	ACharacter* PlayerChar = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
+	if (!PlayerChar) return;
+
+	FRotator BaseRotation = UKismetMathLibrary::FindLookAtRotation(SpawnLocation, PlayerChar->GetActorLocation());
+
+	TArray<float> AngleOffsets = { -20.f, 0.f, 20.f };
+
+	for (float Offset : AngleOffsets)
+	{
+		FRotator SpawnRotation = BaseRotation;
+		SpawnRotation.Yaw += Offset;
 
 		FActorSpawnParameters SpawnParams;
 		SpawnParams.Owner = this;
@@ -160,16 +163,20 @@ void ABossEnemy::FireMagicSpread()
 
 		AMagicProjectile* SpawnedProj = GetWorld()->SpawnActor<AMagicProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, SpawnParams);
 
+		// 3. Verificamos si se creó o si se destruyó al instante
 		if (SpawnedProj)
 		{
 			SpawnedProj->CollisionComp->IgnoreActorWhenMoving(this, true);
-			if (StatsComponent)
-			{
-				SpawnedProj->DamageAmount = StatsComponent->GetStatValue(ERPGStatType::MagicAttack);
-			}
+			if (StatsComponent) SpawnedProj->DamageAmount = StatsComponent->GetStatValue(ERPGStatType::MagicAttack);
+			if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Green, TEXT("¡ÉXITO! Proyectil spawneado."));
+		}
+		else
+		{
+			if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Red, TEXT("FALLO: El proyectil chocó y se destruyó al nacer."));
 		}
 	}
-}void ABossEnemy::PerformRangedAttack()
+}
+void ABossEnemy::PerformRangedAttack()
 {
 	if (bAlreadyDied) return;
 

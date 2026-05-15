@@ -37,24 +37,27 @@ void AEnemyAIController::OnPossess(APawn* InPawn)
 {
     Super::OnPossess(InPawn);
 
-    
     EnemyPerceptionComp->OnTargetPerceptionUpdated.AddDynamic(this, &AEnemyAIController::OnTargetDetected);
 
     if (AEnemyBase* Enemy = Cast<AEnemyBase>(InPawn))
     {
-      
         if (Enemy->EnemyType == EEnemyClassType::Ranged)
         {
-            SightConfig->SightRadius = 1500.f; 
+            SightConfig->SightRadius = 1500.f;
             SightConfig->LoseSightRadius = 2000.f;
         }
-        else 
+        else if (Enemy->EnemyType == EEnemyClassType::Boss)
         {
-            SightConfig->SightRadius = 800.f; 
+            SightConfig->SightRadius = 2500.f;
+            SightConfig->LoseSightRadius = 3000.f;
+            SightConfig->PeripheralVisionAngleDegrees = 180.f;
+        }
+        else
+        {
+            SightConfig->SightRadius = 800.f;
             SightConfig->LoseSightRadius = 1200.f;
         }
 
-        
         EnemyPerceptionComp->ConfigureSense(*SightConfig);
 
         if (BehaviorTreeAsset)
@@ -68,7 +71,6 @@ void AEnemyAIController::OnPossess(APawn* InPawn)
         }
     }
 }
-
 void AEnemyAIController::OnTargetDetected(AActor* Actor, FAIStimulus Stimulus)
 {
     
