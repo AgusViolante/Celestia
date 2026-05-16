@@ -5,8 +5,22 @@
 #include "Interfaces/I_PickUp.h" 
 #include "Chest.generated.h"
 
+
 class UBoxComponent;
 class USkeletalMeshComponent;
+class USoundBase;
+
+USTRUCT(BlueprintType)
+struct FLootItem
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Loot")
+	TSubclassOf<AActor> ItemClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Loot", meta = (ClampMin = "0.0", ClampMax = "100.0"))
+	float DropChance = 50.0f;
+};
 
 UCLASS()
 class CELESTIA_API AChest : public AActor, public II_PickUp
@@ -24,7 +38,7 @@ protected:
 	TObjectPtr<USkeletalMeshComponent> ChestMesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chest | Rewards")
-	TArray<TSubclassOf<AActor>> ItemsToSpawn;
+	TArray<FLootItem> LootTable;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chest | Rewards")
 	float XPReward = 50.0f;
@@ -49,6 +63,9 @@ protected:
 	void DestroyChest();
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chest | Audio")
+	TObjectPtr<USoundBase> OpenSound;
 
 public:
 	virtual void Interact_Implementation(AActor* Interactor) override;

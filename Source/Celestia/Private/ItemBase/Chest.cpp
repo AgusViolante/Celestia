@@ -2,6 +2,7 @@
 #include "Components/BoxComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/ProgressionComponent.h" 
+#include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
 #include "TimerManager.h" 
 #include "Math/UnrealMathUtility.h" 
@@ -49,10 +50,9 @@ void AChest::Interact_Implementation(AActor* Interactor)
 		if (GetWorld())
 		{
 
-			for (TSubclassOf<AActor> ItemClass : ItemsToSpawn)
+			for (const FLootItem& Loot : LootTable)
 			{
-
-				if (ItemClass)
+				if (Loot.ItemClass && FMath::FRandRange(0.0f, 100.0f) <= Loot.DropChance)
 				{
 					FVector RandomOffset = FVector(FMath::RandRange(-60.0f, 60.0f), FMath::RandRange(-60.0f, 60.0f), 0.0f);
 
@@ -70,8 +70,9 @@ void AChest::Interact_Implementation(AActor* Interactor)
 						PosicionFinalSpawn = ResultadoImpacto.ImpactPoint + FVector(0.0f, 0.0f, 20.0f);
 					}
 
-					GetWorld()->SpawnActor<AActor>(ItemClass, PosicionFinalSpawn, FRotator::ZeroRotator);
+					GetWorld()->SpawnActor<AActor>(Loot.ItemClass, PosicionFinalSpawn, FRotator::ZeroRotator);
 				}
+			
 			}
 		}
 
@@ -83,6 +84,10 @@ void AChest::Interact_Implementation(AActor* Interactor)
 }
 void AChest::Multicast_OnChestOpened_Implementation()
 {
+	if (OpenSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, OpenSound, GetActorLocation());
+	}
 	OnChestOpenedVisuals();
 }
 
