@@ -236,7 +236,7 @@ void UUIQuestWindow::NativeConstruct()
 
     if (Btn_TrackQuest)
     {
-        Btn_TrackQuest->OnClicked.AddUniqueDynamic(this, &UUIQuestWindow::OnTrackButtonClicked);
+        Btn_TrackQuest->OnClicked.AddDynamic(this, &UUIQuestWindow::OnTrackButtonClicked);
     }
 }
 
