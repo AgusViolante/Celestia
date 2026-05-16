@@ -52,4 +52,13 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Progression|Balance")
 	float XPExponent = 1.5f;
+
+	//PORTALES
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Progression | Fast Travel")
+	TArray<FName> UnlockedPortals;
+
+	void UnlockPortal(FName NewPortalID);
+
+	bool IsPortalUnlocked(FName PortalIDToCheck) const;
 };

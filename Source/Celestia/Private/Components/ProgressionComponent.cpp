@@ -62,3 +62,17 @@ void UProgressionComponent::UpdateMaxXP()
 
 	MaxXPForNextLevel = BaseXP * FMath::Pow((float)CurrentLevel, XPExponent);
 }
+
+void UProgressionComponent::UnlockPortal(FName NewPortalID)
+{
+	if (!UnlockedPortals.Contains(NewPortalID))
+	{
+		UnlockedPortals.Add(NewPortalID);
+		UE_LOG(LogTemp, Log, TEXT("Portal desbloqueado: %s"), *NewPortalID.ToString());
+	}
+}
+
+bool UProgressionComponent::IsPortalUnlocked(FName PortalIDToCheck) const
+{
+	return UnlockedPortals.Contains(PortalIDToCheck);
+}

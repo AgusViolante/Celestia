@@ -151,6 +151,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Abilities | Stun")
 	bool IsStunned() const { return bIsStunned; }
 
+	UFUNCTION(BlueprintCallable, Category = "Fall Damage")
+	void ResetFallDamageTracking();
+
 protected:
 	virtual void BeginPlay() override;
 	/** Initialize input action bindings */
@@ -233,7 +236,7 @@ protected:
 	void OnStunEnded();
 
 	void ReleaseStun();
-	// --- AHOGO (DROWNING) ---
+	//AHOGO
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Stamina|Swimming")
 	float DrownDamagePerTick = 10.f;
@@ -251,7 +254,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Stamina|Swimming")
 	float SwimStaminaCostPerSecond = 0.5f;
 
-	// --- DETECCIÓN DE AGUA IRREGULAR ---
+	//DETECCIÓN DE AGUA
 	UFUNCTION()
 	void OnWaterOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 

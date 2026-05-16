@@ -1012,3 +1012,8 @@ void ACelestiaCharacter::CheckWaterLevel()
 		}
 	}
 }
+
+void ACelestiaCharacter::ResetFallDamageTracking()
+{
+	MaxZHeightDuringFall = GetActorLocation().Z;
+}
