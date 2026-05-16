@@ -207,7 +207,20 @@ void UUINPCDialogue::OnDeclineQuestClicked()
 	if (Panel_Main) Panel_Main->SetVisibility(ESlateVisibility::Visible);
 }
 
-void UUINPCDialogue::OnShopClicked() { if (CurrentNPC) CurrentNPC->OpenShop(CurrentInteractor); OnLeaveClicked(); }
+void UUINPCDialogue::OnShopClicked_Implementation() { 
+	OnLeaveClicked();
+	if (APawn* InteractorPawn = Cast<APawn>(CurrentInteractor))
+	{
+		if (APlayerController* PC = Cast<APlayerController>(InteractorPawn->GetController()))
+		{
+			PC->SetShowMouseCursor(true);
+			FInputModeUIOnly InputMode;
+			InputMode.SetWidgetToFocus(TakeWidget());
+			PC->SetInputMode(InputMode);
+		}
+	}
+	if (CurrentNPC) CurrentNPC->OpenShop(CurrentInteractor);
+}
 void UUINPCDialogue::OnCraftClicked() { if (CurrentNPC) CurrentNPC->OpenCrafting(CurrentInteractor); OnLeaveClicked(); }
 
 void UUINPCDialogue::OnLeaveClicked()

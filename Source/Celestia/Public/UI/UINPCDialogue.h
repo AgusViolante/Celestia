@@ -72,7 +72,8 @@ protected:
 	UFUNCTION()
 	void OnQuestClicked();
 
-	UFUNCTION()
+	
+	UFUNCTION(BlueprintNativeEvent,BlueprintCallable, Category = "Interaction")
 	void OnShopClicked();
 
 	UFUNCTION()
