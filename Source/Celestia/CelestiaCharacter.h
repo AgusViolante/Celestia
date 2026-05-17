@@ -159,8 +159,7 @@ protected:
 	/** Initialize input action bindings */
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	virtual void OnDeath(AActor* DeadOwner);
 
 	// --- DAÑO DE CAÍDA ---

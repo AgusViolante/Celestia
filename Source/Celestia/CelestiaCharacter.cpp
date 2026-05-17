@@ -1017,3 +1017,4 @@ void ACelestiaCharacter::ResetFallDamageTracking()
 {
 	MaxZHeightDuringFall = GetActorLocation().Z;
 }
+
