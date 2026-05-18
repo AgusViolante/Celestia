@@ -139,15 +139,6 @@ void ACelestiaCharacter::BeginPlay()
 				PlayerHUDInstance->UpdateMana(ManaComponent->GetCurrentMana(), ManaComponent->GetMaxMana());
 			}
 
-			if (StatsComponent)
-			{
-				StatsComponent->OnStatChanged.AddDynamic(PlayerHUDInstance, &UUIPlayerHUD::UpdateStat);
-				PlayerHUDInstance->UpdateStat(ERPGStatType::Strength, StatsComponent->GetStatValue(ERPGStatType::Strength));
-				PlayerHUDInstance->UpdateStat(ERPGStatType::Dexterity, StatsComponent->GetStatValue(ERPGStatType::Dexterity));
-				PlayerHUDInstance->UpdateStat(ERPGStatType::Intelligence, StatsComponent->GetStatValue(ERPGStatType::Intelligence));
-				PlayerHUDInstance->UpdateStat(ERPGStatType::Wisdom, StatsComponent->GetStatValue(ERPGStatType::Wisdom));
-				PlayerHUDInstance->UpdateStat(ERPGStatType::Endurance, StatsComponent->GetStatValue(ERPGStatType::Endurance));
-			}
 			if (ProgressionComponent)
 			{
 				ProgressionComponent->OnXPGained.AddDynamic(PlayerHUDInstance, &UUIPlayerHUD::UpdateXP);
@@ -173,6 +164,7 @@ void ACelestiaCharacter::BeginPlay()
 
 				PlayerHUDInstance->ClearTrackedQuest();
 			}
+
 		}
 	}
 
@@ -190,6 +182,7 @@ void ACelestiaCharacter::BeginPlay()
 	{
 		StatsComponent->OnMaxManaCalculated.AddDynamic(this, &ACelestiaCharacter::OnMaxManaCalculated);
 		StatsComponent->OnMaxHealthCalculated.AddDynamic(this, &ACelestiaCharacter::OnMaxHealthCalculated);
+		StatsComponent->OnMaxStaminaCalculated.AddDynamic(this, &ACelestiaCharacter::OnMaxStaminaCalculated);
 	}
 
 	if (ProgressionComponent && StatsComponent)
@@ -1017,4 +1010,21 @@ void ACelestiaCharacter::ResetFallDamageTracking()
 {
 	MaxZHeightDuringFall = GetActorLocation().Z;
 }
+void ACelestiaCharacter::OnMaxStaminaCalculated(float NewMaxStamina)
+{
+	if (StaminaComponent)
+	{
+		float StaminaDifference = NewMaxStamina - StaminaComponent->MaxStamina;
 
+		StaminaComponent->MaxStamina = NewMaxStamina;
+
+		if (StaminaDifference > 0.0f)
+		{
+			StaminaComponent->CurrentStamina += StaminaDifference;
+		}
+
+		StaminaComponent->CurrentStamina = FMath::Clamp(StaminaComponent->CurrentStamina, 0.0f, StaminaComponent->MaxStamina);
+
+		StaminaComponent->OnStaminaChanged.Broadcast(StaminaComponent, StaminaComponent->CurrentStamina, StaminaComponent->MaxStamina);
+	}
+}

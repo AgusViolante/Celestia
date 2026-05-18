@@ -15,6 +15,7 @@ enum class ERPGStatType : uint8
 	Endurance		UMETA(DisplayName = "Resistencia (END)"),
 	MaxHealth		UMETA(DisplayName = "Salud Maxima"),
 	MaxMana			UMETA(DisplayName = "Mana Maximo"),
+	MaxStamina		UMETA(DisplayName = "Estamina Maxima"),
 	MeleeAttack		UMETA(DisplayName = "Ataque Melee"),
 	RangedAttack	UMETA(DisplayName = "Ataque a Distancia"),
 	MagicAttack		UMETA(DisplayName = "Ataque Magico"),
@@ -46,6 +47,8 @@ struct FRPGStat
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMaxManaCalculatedSignature, float, NewMaxMana);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMaxHealthCalculatedSignature, float, NewMaxHealth);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnStatChangedSignature, ERPGStatType, StatType, float, NewTotalValue);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStatPointsChangedSignature, int32, NewStatPoints);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMaxStaminaCalculatedSignature, float, NewMaxStamina);
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class CELESTIA_API UStatsComponent : public UActorComponent
@@ -100,6 +103,11 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats | Secondary")
 	FRPGStat MagicCrit;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats | Secondary")
+	FRPGStat MaxStamina;
+
+	
+
 public:
 	UPROPERTY(BlueprintAssignable, Category = "Stats | Events")
 	FOnMaxManaCalculatedSignature OnMaxManaCalculated;
@@ -109,6 +117,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Stats | Events")
 	FOnStatChangedSignature OnStatChanged;
+
+	UPROPERTY(BlueprintAssignable, Category = "Stats | Events")
+	FOnMaxStaminaCalculatedSignature OnMaxStaminaCalculated;
 
 	UFUNCTION(BlueprintCallable, Category = "Stats | Logic")
 	void RecalculateDerivedStats();
@@ -124,4 +135,16 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Stats | Logic")
 	void SetPrimaryStats(float NewStr, float NewDex, float NewInt, float NewWis, float NewEnd);
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats | Progression")
+	int32 AvailableStatPoints = 0;
+
+	UPROPERTY(BlueprintAssignable, Category = "Stats | Events")
+	FOnStatPointsChangedSignature OnStatPointsChanged;
+
+	UFUNCTION(BlueprintCallable, Category = "Stats | Progression")
+	bool AllocateStatPoint(ERPGStatType StatType);
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats | Progression")
+	int32 CharacterLevel = 1;
 };

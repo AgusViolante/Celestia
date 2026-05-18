@@ -23,24 +23,15 @@ void UProgressionComponent::AddXP(float Amount)
 	if (Amount <= 0.0f) return;
 
 	CurrentXP += Amount;
-	bool bDidLevelUp = false;
 
-	
 	while (MaxXPForNextLevel > 0.0f && CurrentXP >= MaxXPForNextLevel)
 	{
-		CurrentXP -= MaxXPForNextLevel; 
-		CurrentLevel++;                 
+		CurrentXP -= MaxXPForNextLevel;
+		CurrentLevel++;
+		UpdateMaxXP();
 
-		UpdateMaxXP();                  
-		bDidLevelUp = true;
-	}
-
-	
-	if (bDidLevelUp)
-	{
 		LevelUp();
 	}
-
 
 	OnXPGained.Broadcast(CurrentXP, MaxXPForNextLevel);
 }

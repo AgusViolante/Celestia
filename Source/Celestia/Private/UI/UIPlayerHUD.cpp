@@ -41,58 +41,6 @@ void UUIPlayerHUD::UpdateMana(float CurrentMana, float MaxMana)
 	}
 }
 
-void UUIPlayerHUD::UpdateStat(ERPGStatType StatType, float NewValue)
-{
-	
-	int32 RoundedValue = FMath::RoundToInt(NewValue);
-	FString FormattedString;
-
-	switch (StatType)
-	{
-	case ERPGStatType::Strength:
-		if (Txt_STR)
-		{
-			FormattedString = FString::Printf(TEXT("STR : %d"), RoundedValue);
-			Txt_STR->SetText(FText::FromString(FormattedString));
-		}
-		break;
-
-	case ERPGStatType::Dexterity:
-		if (Txt_DEX)
-		{
-			FormattedString = FString::Printf(TEXT("DEX : %d"), RoundedValue);
-			Txt_DEX->SetText(FText::FromString(FormattedString));
-		}
-		break;
-
-	case ERPGStatType::Intelligence:
-		if (Txt_INT)
-		{
-			FormattedString = FString::Printf(TEXT("INT : %d"), RoundedValue);
-			Txt_INT->SetText(FText::FromString(FormattedString));
-		}
-		break;
-
-	case ERPGStatType::Wisdom:
-		if (Txt_WIS)
-		{
-			FormattedString = FString::Printf(TEXT("WIS : %d"), RoundedValue);
-			Txt_WIS->SetText(FText::FromString(FormattedString));
-		}
-		break;
-
-	case ERPGStatType::Endurance:
-		if (Txt_END)
-		{
-			FormattedString = FString::Printf(TEXT("END : %d"), RoundedValue);
-			Txt_END->SetText(FText::FromString(FormattedString));
-		}
-		break;
-
-	default:
-		break;
-	}
-}
 void UUIPlayerHUD::UpdateXP(float CurrentXP, float MaxXP)
 {
 	

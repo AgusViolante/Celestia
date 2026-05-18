@@ -44,21 +44,6 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* XP_Text;
 
-	// --- TEXTOS DE ESTADÍSTICAS PRIMARIAS ---
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* Txt_STR;
-
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* Txt_DEX;
-
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* Txt_INT;
-
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* Txt_WIS;
-
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* Txt_END;
 
 	// --- FUNCIONES DE ACTUALIZACIÓN ---
 	UFUNCTION()
@@ -69,9 +54,6 @@ public:
 
 	UFUNCTION()
 	void UpdateMana(float CurrentMana, float MaxMana);
-
-	UFUNCTION()
-	void UpdateStat(ERPGStatType StatType, float NewValue);
 
 	UFUNCTION()
 	void UpdateXP(float CurrentXP, float MaxXP);

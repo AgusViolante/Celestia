@@ -190,6 +190,9 @@ protected:
 	void OnMaxManaCalculated(float NewMaxMana);
 
 	UFUNCTION()
+	void OnMaxStaminaCalculated(float NewMaxStamina);
+
+	UFUNCTION()
 	void OnMaxHealthCalculated(float NewMaxHealth);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
