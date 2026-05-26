@@ -16,6 +16,9 @@ class CELESTIA_API AMeleeEnemy : public AEnemyBase
 public:
 	AMeleeEnemy();
 
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void ExecuteMeleeHit();
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
 	USphereComponent* DamageSphere;
 

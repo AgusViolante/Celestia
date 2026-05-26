@@ -15,6 +15,7 @@ AMeleeEnemy::AMeleeEnemy()
 	DamageSphere->SetSphereRadius(75.f);
 	DamageSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	DamageSphere->SetCollisionResponseToAllChannels(ECR_Ignore);
+	DamageSphere->SetCollisionProfileName(TEXT("Trigger"));
 	DamageSphere->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 
 	StunVFXHeightOffset = 180.0f;
@@ -70,34 +71,34 @@ void AMeleeEnemy::ApplyDamage()
 {
 	if (!DamageTarget || bIsStunned) return;
 
+	if (AttackMontage && GetMesh()->GetAnimInstance())
+	{
+		if (!GetMesh()->GetAnimInstance()->Montage_IsPlaying(AttackMontage))
+		{
+			GetMesh()->GetAnimInstance()->Montage_Play(AttackMontage, 1.0f);
+		}
+	}
+}
+
+void AMeleeEnemy::ExecuteMeleeHit()
+{
+	if (!DamageTarget || bIsStunned) return;
 
 	if (UHealthComponent* TargetHealthComp = DamageTarget->FindComponentByClass<UHealthComponent>())
 	{
-		float EnemyDamageAmount = 20.0f; // Daño por defecto fallback
-		bool bWasCriticalHit = false; // Bandera para saber si fue crítico
+		float EnemyDamageAmount = 20.0f;
+		bool bWasCriticalHit = false;
 
 		if (StatsComponent)
 		{
-			// 1. Obtenemos el daño base
 			EnemyDamageAmount = StatsComponent->GetStatValue(ERPGStatType::MeleeAttack);
-
-			// 2. --- LÓGICA DE CRÍTICO ---
 			float CritChance = StatsComponent->GetStatValue(ERPGStatType::MeleeCrit);
-			float RandomRoll = FMath::RandRange(0.0f, 100.0f); // Tiramos un dado del 0 al 100
+			float RandomRoll = FMath::RandRange(0.0f, 100.0f);
 
-			// Si el dado saca menos o igual a nuestra probabilidad, critico
 			if (RandomRoll <= CritChance)
 			{
-				EnemyDamageAmount *= 1.5f; // Multiplicamos el daño x1.5 
+				EnemyDamageAmount *= 1.5f;
 				bWasCriticalHit = true;
-			}
-		}
-
-		if (AttackMontage && GetMesh()->GetAnimInstance())
-		{
-			if (!GetMesh()->GetAnimInstance()->Montage_IsPlaying(AttackMontage))
-			{
-				GetMesh()->GetAnimInstance()->Montage_Play(AttackMontage, 1.0f);
 			}
 		}
 
@@ -109,10 +110,6 @@ void AMeleeEnemy::ApplyDamage()
 		TargetHealthComp->TakeDamage(EnemyDamageAmount * DamageInterval, bWasCriticalHit);
 
 		if (TargetHealthComp->IsDead()) StopDamage();
-	}
-	else
-	{
-		StopDamage();
 	}
 }
 void AMeleeEnemy::Die_Implementation()

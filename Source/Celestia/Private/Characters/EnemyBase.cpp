@@ -46,7 +46,7 @@ void AEnemyBase::BeginPlay()
 	if (UCapsuleComponent* Capsule = GetCapsuleComponent())
 	{
 		Capsule->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-		Capsule->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+		Capsule->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 		Capsule->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 		
 	}
