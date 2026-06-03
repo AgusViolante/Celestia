@@ -86,6 +86,9 @@ struct FQuestReward
 	float Experience;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Reward")
+	int32 BonusLevelsToGrant;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Reward")
 	int32 Coins;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Reward")
@@ -131,6 +134,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Rewards")
 	FQuestReward Rewards;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Info")
+	bool bIsRepeatable = false;
+	
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Info", meta = (ClampMin = "1"))
 	int32 RequiredLevel = 1;

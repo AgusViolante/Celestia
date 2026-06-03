@@ -67,3 +67,11 @@ bool UProgressionComponent::IsPortalUnlocked(FName PortalIDToCheck) const
 {
 	return UnlockedPortals.Contains(PortalIDToCheck);
 }
+void UProgressionComponent::ForceLevelUp(int32 LevelsToGrant)
+{
+	for (int32 i = 0; i < LevelsToGrant; i++)
+	{
+		float XPNeeded = MaxXPForNextLevel - CurrentXP;
+		AddXP(XPNeeded);
+	}
+}

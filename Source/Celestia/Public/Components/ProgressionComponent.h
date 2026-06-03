@@ -53,6 +53,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Progression|Balance")
 	float XPExponent = 1.5f;
 
+	UFUNCTION(BlueprintCallable, Category = "Progression")
+	void ForceLevelUp(int32 LevelsToGrant);
+
 	//PORTALES
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Progression | Fast Travel")

@@ -17,9 +17,10 @@ void UQuestComponent::BeginPlay()
 
 bool UQuestComponent::CanAcceptQuest(UQuestDataAsset* QuestToCheck) const
 {
-	if (!QuestToCheck) return false;
-
-	if (CompletedQuestIDs.Contains(QuestToCheck->QuestID)) return false;
+	if (!QuestToCheck->bIsRepeatable && CompletedQuestIDs.Contains(QuestToCheck->QuestID))
+	{
+		return false;
+	}
 
 	for (const FActiveQuest& Quest : ActiveQuests)
 	{
@@ -38,7 +39,7 @@ bool UQuestComponent::CanAcceptQuest(UQuestDataAsset* QuestToCheck) const
 	{
 		if (!CompletedQuestIDs.Contains(QuestToCheck->PrerequisiteQuest->QuestID))
 		{
-			return false; // Le falta la misión anterior
+			return false; 
 		}
 	}
 
@@ -84,7 +85,7 @@ void UQuestComponent::UpdateObjective(EObjectiveType Type, FName TargetID, TSubc
 			{
 				bool bIsMatch = false;
 
-				// Lógica de coincidencia según tipo
+				
 				if (Type == EObjectiveType::Collect)
 				{
 					if (Objective.TargetItemClass == TargetItemClass) bIsMatch = true;
@@ -105,13 +106,12 @@ void UQuestComponent::UpdateObjective(EObjectiveType Type, FName TargetID, TSubc
 
 		if (bThisQuestWasUpdated)
 		{
-			// Primero checkeamos si esto activó el autocompletado de una Dungeon
+			
 			CheckDungeonCompletion();
 
-			// Luego checkeamos si la misión entera se terminó
 			CheckQuestCompletion(i);
 
-			// Notificamos a la UI si es la misión que estamos siguiendo
+			
 			if (TrackedQuestData == ActiveQuest.QuestData)
 			{
 				OnObjectiveUpdated.Broadcast(ActiveQuest);
@@ -131,7 +131,7 @@ void UQuestComponent::CheckDungeonCompletion()
 		bool bHasDungeonObjective = false;
 		int32 DungeonObjIndex = -1;
 
-		// Escaneamos los objetivos de esta misión
+		
 		for (int32 j = 0; j < Quest.CurrentObjectives.Num(); ++j)
 		{
 			if (Quest.CurrentObjectives[j].ObjectiveType == EObjectiveType::Dungeon)
@@ -141,7 +141,7 @@ void UQuestComponent::CheckDungeonCompletion()
 			}
 			else
 			{
-				// Si cualquier objetivo que NO sea Dungeon no está listo, la dungeon no se completa sola
+				
 				if (Quest.CurrentObjectives[j].CurrentAmount < Quest.CurrentObjectives[j].RequiredAmount)
 				{
 					bAllOtherTasksComplete = false;
@@ -149,17 +149,16 @@ void UQuestComponent::CheckDungeonCompletion()
 			}
 		}
 
-		// Si tiene objetivo de Dungeon y todo lo demás está 100%
 		if (bHasDungeonObjective && bAllOtherTasksComplete)
 		{
 			FQuestObjective& DungeonObj = Quest.CurrentObjectives[DungeonObjIndex];
 
 			if (DungeonObj.CurrentAmount < DungeonObj.RequiredAmount)
 			{
-				// Autocompletamos el meta-objetivo
+				
 				DungeonObj.CurrentAmount = DungeonObj.RequiredAmount;
 
-				// Refrescamos la UI para que aparezca el check en "Completar Dungeon"
+				
 				if (TrackedQuestData == Quest.QuestData)
 				{
 					OnObjectiveUpdated.Broadcast(Quest);
@@ -188,7 +187,7 @@ void UQuestComponent::CheckQuestCompletion(int32 QuestIndex)
 	if (bAllComplete)
 	{
 		ActiveQuest.bIsReadyToTurnIn = true;
-		// Opcional: Broadcast de misión lista para entregar
+		
 	}
 }
 
@@ -221,6 +220,11 @@ void UQuestComponent::TurnInQuest(UQuestDataAsset* QuestToTurnIn)
 					if (UProgressionComponent* ProgComp = OwningActor->FindComponentByClass<UProgressionComponent>())
 					{
 						ProgComp->AddXP(QuestToTurnIn->Rewards.Experience);
+
+						if (QuestToTurnIn->Rewards.BonusLevelsToGrant > 0)
+						{
+							ProgComp->ForceLevelUp(QuestToTurnIn->Rewards.BonusLevelsToGrant);
+						}
 					}
 
 					OnQuestRewardsGranted.Broadcast(QuestToTurnIn->Rewards.Coins, QuestToTurnIn->Rewards.RewardItems);
