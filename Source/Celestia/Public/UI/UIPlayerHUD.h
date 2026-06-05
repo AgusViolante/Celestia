@@ -96,4 +96,13 @@ public:
 	UPROPERTY(Transient, meta = (BindWidgetAnim))
 	class UWidgetAnimation* BossFadeInAnim;
 
+	UFUNCTION()
+	void ShowNewQuestNotification(const FActiveQuest& AcceptedQuest);
+
+protected:
+	UPROPERTY(Transient, meta = (BindWidgetAnimOptional))
+	class UWidgetAnimation* Anim_NewQuest;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	class UTextBlock* Txt_NewQuestName;
 };

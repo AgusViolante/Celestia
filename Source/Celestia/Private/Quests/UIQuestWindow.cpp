@@ -230,13 +230,13 @@ void UUIQuestWindow::CreateRewardRow(const FString & RewardName, int32 Quantity)
     RewardsContainer->AddChild(RowBox);
 }
 
-void UUIQuestWindow::NativeConstruct()
+void UUIQuestWindow::NativeOnInitialized()
 {
-    Super::NativeConstruct();
+    Super::NativeOnInitialized();
 
     if (Btn_TrackQuest)
     {
-        Btn_TrackQuest->OnClicked.AddUniqueDynamic(this, &UUIQuestWindow::OnTrackButtonClicked);
+        Btn_TrackQuest->OnClicked.AddDynamic(this, &UUIQuestWindow::OnTrackButtonClicked);
     }
 }
 

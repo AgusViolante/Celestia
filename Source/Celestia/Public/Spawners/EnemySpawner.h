@@ -1,4 +1,5 @@
 // Fill out your copyright notice in the Description page of Project Settings.
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -17,17 +18,14 @@ class CELESTIA_API AEnemySpawner : public AActor
 public:
     AEnemySpawner();
 
-
     UPROPERTY(EditAnywhere, Category = "Spawner")
     TSubclassOf<AEnemyBase> EnemyClass;
-
 
     UPROPERTY(EditAnywhere, Category = "Spawner")
     TArray<ATargetPoint*> SpawnPoints;
 
     UPROPERTY(EditAnywhere, Category = "Spawner")
     TArray<ATargetPoint*> PatrolPointsToAssign;
-
 
     UPROPERTY(EditAnywhere, Category = "Spawner")
     float DefaultPatrolAcceptanceRadius = 50.f;
@@ -43,9 +41,11 @@ public:
 
 protected:
     virtual void BeginPlay() override;
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
     void SpawnEnemyAtIndex(int32 SpawnIndex);
 
+    UFUNCTION()
     void DoRespawnByIndex(int32 SpawnIndex);
 
     UFUNCTION()
@@ -53,6 +53,9 @@ protected:
 
     UPROPERTY()
     TMap<AEnemyBase*, int32> EnemyToSpawnIndexMap;
+
+    UPROPERTY()
+    TArray<FTimerHandle> RespawnTimerHandles;
 
 public:
     UFUNCTION(BlueprintCallable, Category = "Spawner")

@@ -2,6 +2,7 @@
 #include "Components/ProgressBar.h"
 #include "Components/StaminaComponent.h"
 #include "Quests/QuestComponent.h"
+#include "Animation/WidgetAnimation.h"
 #include "Components/TextBlock.h"
 
 
@@ -174,5 +175,18 @@ void UUIPlayerHUD::HideBossUI()
 	{
 		if (BossHealthBar) BossHealthBar->SetVisibility(ESlateVisibility::Collapsed);
 		if (BossNameText) BossNameText->SetVisibility(ESlateVisibility::Collapsed);
+	}
+}
+
+void UUIPlayerHUD::ShowNewQuestNotification(const FActiveQuest& AcceptedQuest)
+{
+	if (Txt_NewQuestName && AcceptedQuest.QuestData)
+	{
+		Txt_NewQuestName->SetText(AcceptedQuest.QuestData->QuestName);
+	}
+
+	if (Anim_NewQuest)
+	{
+		PlayAnimation(Anim_NewQuest);
 	}
 }

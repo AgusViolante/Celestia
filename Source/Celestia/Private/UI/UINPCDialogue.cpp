@@ -37,15 +37,9 @@ void UUINPCDialogue::SetupUI(ANPCBase* InNPC, AActor* InInteractor)
 	if (Panel_QuestDetails) Panel_QuestDetails->SetVisibility(ESlateVisibility::Collapsed);
 
 	if (Txt_NPCName) Txt_NPCName->SetText(CurrentNPC->NPC_Name);
-	if (Txt_Greeting) Txt_Greeting->SetText(CurrentNPC->GreetingMessage);
-
-	bShowQuestBtn = false;
-	QuestBtnText = TEXT("Misiones");
-	
 
 	if (UQuestComponent* QuestComp = CurrentInteractor->FindComponentByClass<UQuestComponent>())
 	{
-
 		for (const FActiveQuest& ActiveQuest : QuestComp->ActiveQuests)
 		{
 			if (ActiveQuest.bIsReadyToTurnIn && ActiveQuest.QuestData && ActiveQuest.QuestData->ReceiverNPC_ID == CurrentNPC->NPC_ID)
@@ -59,7 +53,7 @@ void UUINPCDialogue::SetupUI(ANPCBase* InNPC, AActor* InInteractor)
 		}
 
 		bIsTalking = false;
-		if (!bShowQuestBtn) 
+		if (!bShowQuestBtn)
 		{
 			for (const FActiveQuest& ActiveQuest : QuestComp->ActiveQuests)
 			{
@@ -84,7 +78,6 @@ void UUINPCDialogue::SetupUI(ANPCBase* InNPC, AActor* InInteractor)
 
 		if (!bShowQuestBtn)
 		{
-
 			for (UQuestDataAsset* QuestToGive : CurrentNPC->AvailableQuests)
 			{
 				if (QuestToGive && QuestToGive->GiverNPC_ID == CurrentNPC->NPC_ID)
@@ -99,7 +92,13 @@ void UUINPCDialogue::SetupUI(ANPCBase* InNPC, AActor* InInteractor)
 				}
 			}
 		}
-	} 
+	}
+
+	if (Txt_Greeting)
+	{
+		Txt_Greeting->SetText(CurrentNPC->GreetingMessage);
+	}
+
 	if (Btn_Quest) Btn_Quest->SetVisibility(bShowQuestBtn ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 	if (Txt_QuestBtn) Txt_QuestBtn->SetText(FText::FromString(QuestBtnText));
 
@@ -116,8 +115,7 @@ void UUINPCDialogue::SetupUI(ANPCBase* InNPC, AActor* InInteractor)
 			PC->SetInputMode(InputMode);
 		}
 	}
-}
-void UUINPCDialogue::OnQuestClicked()
+}void UUINPCDialogue::OnQuestClicked()
 {
 	if (bIsTalking)
 	{
@@ -142,22 +140,38 @@ void UUINPCDialogue::OnQuestClicked()
 	}
 	if (!PendingQuest) return;
 
-	// Ocultamos el saludo y mostramos el Lore
 	if (Panel_Main) Panel_Main->SetVisibility(ESlateVisibility::Collapsed);
 	if (Panel_QuestDetails) Panel_QuestDetails->SetVisibility(ESlateVisibility::Visible);
 
-	if (Txt_QuestTitle) Txt_QuestTitle->SetText(PendingQuest->QuestName);
-	if (Txt_QuestLore) Txt_QuestLore->SetText(PendingQuest->QuestDescription);
+	if (Txt_QuestTitle) Txt_QuestTitle->SetText(CurrentNPC->NPC_Name);
 
+	// 1. CARGAR EL DIÁLOGO CORRECTO SEGÚN EL ESTADO
 	if (bIsTurningIn)
 	{
-		if (Txt_AcceptBtn) Txt_AcceptBtn->SetText(FText::FromString(TEXT("Recibir Recompensa")));
-		if (Btn_DeclineQuest) Btn_DeclineQuest->SetVisibility(ESlateVisibility::Collapsed); // No puedes rechazar una entrega
+		ActiveDialogueLines = PendingQuest->QuestTurnInDialogue;
+		if (Btn_DeclineQuest) Btn_DeclineQuest->SetVisibility(ESlateVisibility::Collapsed);
 	}
 	else
 	{
-		if (Txt_AcceptBtn) Txt_AcceptBtn->SetText(FText::FromString(TEXT("Aceptar Misión")));
+		ActiveDialogueLines = PendingQuest->QuestOfferDialogue;
 		if (Btn_DeclineQuest) Btn_DeclineQuest->SetVisibility(ESlateVisibility::Visible);
+	}
+
+	if (ActiveDialogueLines.Num() == 0)
+	{
+		ActiveDialogueLines.Add(PendingQuest->QuestDescription);
+	}
+
+	CurrentLineIndex = 0;
+	if (Txt_QuestLore) Txt_QuestLore->SetText(ActiveDialogueLines[CurrentLineIndex]);
+
+	if (ActiveDialogueLines.Num() > 1)
+	{
+		if (Txt_AcceptBtn) Txt_AcceptBtn->SetText(FText::FromString(TEXT("Siguiente...")));
+	}
+	else
+	{
+		if (Txt_AcceptBtn) Txt_AcceptBtn->SetText(bIsTurningIn ? FText::FromString(TEXT("Recibir Recompensa")) : FText::FromString(TEXT("Aceptar Misión")));
 	}
 }
 
@@ -186,18 +200,39 @@ void UUINPCDialogue::OnAcceptQuestClicked()
 		}
 		return; 
 	}
-	if (UQuestComponent* QuestComp = CurrentInteractor->FindComponentByClass<UQuestComponent>())
+	if (PendingQuest)
 	{
-		if (bIsTurningIn)
+	
+		CurrentLineIndex++;
+
+		
+		if (CurrentLineIndex < ActiveDialogueLines.Num())
 		{
-			QuestComp->TurnInQuest(PendingQuest);
+			if (Txt_QuestLore) Txt_QuestLore->SetText(ActiveDialogueLines[CurrentLineIndex]);
+
+			
+			if (CurrentLineIndex == ActiveDialogueLines.Num() - 1)
+			{
+				if (Txt_AcceptBtn) Txt_AcceptBtn->SetText(bIsTurningIn ? FText::FromString(TEXT("Recibir Recompensa")) : FText::FromString(TEXT("Aceptar Misión")));
+			}
+			return; 
 		}
 		else
 		{
-			QuestComp->AcceptQuest(PendingQuest);
+			if (UQuestComponent* QuestComp = CurrentInteractor->FindComponentByClass<UQuestComponent>())
+			{
+				if (bIsTurningIn)
+				{
+					QuestComp->TurnInQuest(PendingQuest);
+				}
+				else
+				{
+					QuestComp->AcceptQuest(PendingQuest);
+				}
+			}
+			OnLeaveClicked();
 		}
 	}
-	OnLeaveClicked(); 
 }
 
 void UUINPCDialogue::OnDeclineQuestClicked()

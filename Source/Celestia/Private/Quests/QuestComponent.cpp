@@ -13,6 +13,23 @@ UQuestComponent::UQuestComponent()
 void UQuestComponent::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	for (UQuestDataAsset* StartQuest : StartingQuests)
+	{
+		if (StartQuest && CanAcceptQuest(StartQuest))
+		{
+			AcceptQuest(StartQuest);
+		}
+	}
+
+	if (AActor* OwningActor = GetOwner())
+	{
+		if (UProgressionComponent* ProgComp = OwningActor->FindComponentByClass<UProgressionComponent>())
+		{
+			ProgComp->OnLevelUp.AddDynamic(this, &UQuestComponent::OnPlayerLevelUp);
+		}
+
+	}
 }
 
 bool UQuestComponent::CanAcceptQuest(UQuestDataAsset* QuestToCheck) const
@@ -60,10 +77,7 @@ void UQuestComponent::AcceptQuest(UQuestDataAsset* NewQuest)
 
 	ActiveQuests.Add(NewActiveQuest);
 
-	if (!TrackedQuestData)
-	{
-		TrackQuest(NewQuest);
-	}
+	TrackQuest(NewQuest);
 
 	OnQuestAccepted.Broadcast(ActiveQuests.Last());
 	OnQuestListUpdated.Broadcast();
@@ -71,6 +85,7 @@ void UQuestComponent::AcceptQuest(UQuestDataAsset* NewQuest)
 void UQuestComponent::UpdateObjective(EObjectiveType Type, FName TargetID, TSubclassOf<AItemBase> TargetItemClass, int32 Amount)
 {
 	bool bAnyQuestUpdated = false;
+	TArray<UQuestDataAsset*> QuestsToAutoTurnIn;
 
 	for (int32 i = 0; i < ActiveQuests.Num(); ++i)
 	{
@@ -116,7 +131,16 @@ void UQuestComponent::UpdateObjective(EObjectiveType Type, FName TargetID, TSubc
 			{
 				OnObjectiveUpdated.Broadcast(ActiveQuest);
 			}
+
+			if (ActiveQuests[i].bIsReadyToTurnIn && ActiveQuests[i].QuestData->bAutoTurnIn)
+			{
+				QuestsToAutoTurnIn.Add(ActiveQuests[i].QuestData);
+			}
 		}
+	}
+	for (UQuestDataAsset* AutoQuest : QuestsToAutoTurnIn)
+	{
+		TurnInQuest(AutoQuest);
 	}
 }
 
@@ -280,4 +304,17 @@ void UQuestComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 
 	DOREPLIFETIME(UQuestComponent, ActiveQuests);
 	DOREPLIFETIME(UQuestComponent, CompletedQuestIDs);
+}
+void UQuestComponent::OnPlayerLevelUp(int32 NewLevel)
+{
+	for (UQuestDataAsset* Quest : AutoUnlockByLevelQuests)
+	{
+		if (Quest && NewLevel >= Quest->RequiredLevel)
+		{
+			if (CanAcceptQuest(Quest))
+			{
+				AcceptQuest(Quest);
+			}
+		}
+	}
 }

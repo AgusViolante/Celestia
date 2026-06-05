@@ -98,6 +98,15 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Quests | Events")
 	FOnQuestAcceptedSignature OnQuestAccepted;
 
+	UPROPERTY(EditAnywhere, Category = "Quests | Auto")
+	TArray<UQuestDataAsset*> StartingQuests;
+
+	// Misiones que se otorgan solas al alcanzar un nivel
+	UPROPERTY(EditAnywhere, Category = "Quests | Auto")
+	TArray<UQuestDataAsset*> AutoUnlockByLevelQuests;
+
+	UFUNCTION()
+	void OnPlayerLevelUp(int32 NewLevel);
 
 	// --- FUNCIONES CORE ---
 

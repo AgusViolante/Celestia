@@ -4,23 +4,45 @@
 #include "Characters/NPC/NPCBase.h"
 #include "Quests/QuestComponent.h"
 #include "UI/UINPCDialogue.h"
+#include "TimerManager.h"
+#include "Kismet/GameplayStatics.h"
+#include "Quests/QuestComponent.h"
+#include "UObject/ConstructorHelpers.h"
 #include "Components/CapsuleComponent.h"
 
 ANPCBase::ANPCBase()
 {
+
+	QuestIndicatorIcon = CreateDefaultSubobject<UBillboardComponent>(TEXT("QuestIndicatorIcon"));
+	QuestIndicatorIcon->SetupAttachment(RootComponent);
+
+	QuestIndicatorIcon->SetRelativeLocation(FVector(0.f, 0.f, 130.f)); 
+	QuestIndicatorIcon->SetRelativeScale3D(FVector(2.0f, 2.0f, 2.0f)); 
+
+
+	QuestIndicatorIcon->bHiddenInGame = true; 
+
+	static ConstructorHelpers::FObjectFinder<UTexture2D> DefaultIcon(TEXT("/Engine/EditorMaterials/TargetIcon"));
+	if (DefaultIcon.Succeeded())
+	{
+		QuestIndicatorIcon->SetSprite(DefaultIcon.Object);
+	}
+
 	PrimaryActorTick.bCanEverTick = false;
 
-	// Configuración básica para que no sea controlado por un jugador y tenga físicas correctas
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 
 	if (GetCapsuleComponent())
 	{
-		// Aseguramos que bloquee al jugador pero permita interactuar
 		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	}
 }
+void ANPCBase::BeginPlay()
+{
+	Super::BeginPlay();
 
-// Esta es la implementación base en C++
+	GetWorldTimerManager().SetTimer(QuestIndicatorTimerHandle, this, &ANPCBase::CheckQuestStatus, 1.0f, true);
+}
 void ANPCBase::Interact_Implementation(AActor* Interactor)
 {
 	if (!Interactor || !DialogueWidgetClass) return;
@@ -29,7 +51,6 @@ void ANPCBase::Interact_Implementation(AActor* Interactor)
 	{
 		if (APlayerController* PC = Cast<APlayerController>(InteractorPawn->GetController()))
 		{
-			// Si es el jugador local, creamos y mostramos la UI
 			if (PC->IsLocalPlayerController())
 			{
 				UUINPCDialogue* DialogueUI = CreateWidget<UUINPCDialogue>(PC, DialogueWidgetClass);
@@ -68,6 +89,78 @@ void ANPCBase::ProcessQuestInteraction(AActor* Interactor)
 				QuestComp->AcceptQuest(QuestToGive);
 				return;
 			}
+		}
+	}
+}
+void ANPCBase::UpdateQuestIndicator(UQuestComponent* PlayerQuestComp)
+{
+	if (!QuestIndicatorIcon || !PlayerQuestComp) return;
+
+	bool bHasTurnIn = false;
+	bool bHasNewQuest = false;
+	bool bHasTalkObjective = false;
+
+	for (const FActiveQuest& ActiveQuest : PlayerQuestComp->ActiveQuests)
+	{
+		if (ActiveQuest.bIsReadyToTurnIn && ActiveQuest.QuestData && ActiveQuest.QuestData->ReceiverNPC_ID == NPC_ID)
+		{
+			bHasTurnIn = true;
+			break;
+		}
+	}
+
+	if (!bHasTurnIn)
+	{
+		for (const FActiveQuest& ActiveQuest : PlayerQuestComp->ActiveQuests)
+		{
+			if (ActiveQuest.bIsReadyToTurnIn) continue;
+
+			for (const FQuestObjective& Obj : ActiveQuest.CurrentObjectives)
+			{
+				if (Obj.ObjectiveType == EObjectiveType::Talk && Obj.TargetID == NPC_ID && Obj.CurrentAmount < Obj.RequiredAmount)
+				{
+					bHasTalkObjective = true;
+					break;
+				}
+			}
+			if (bHasTalkObjective) break;
+		}
+	}
+
+	if (!bHasTurnIn && !bHasTalkObjective)
+	{
+		for (UQuestDataAsset* QuestToGive : AvailableQuests)
+		{
+			if (QuestToGive && PlayerQuestComp->CanAcceptQuest(QuestToGive))
+			{
+				bHasNewQuest = true;
+				break;
+			}
+		}
+	}
+
+	if (bHasTurnIn)
+	{
+		if (Icon_TurnInQuest) QuestIndicatorIcon->SetSprite(Icon_TurnInQuest);
+		QuestIndicatorIcon->SetHiddenInGame(false);
+	}
+	else if (bHasNewQuest || bHasTalkObjective)
+	{
+		if (Icon_NewQuest) QuestIndicatorIcon->SetSprite(Icon_NewQuest);
+		QuestIndicatorIcon->SetHiddenInGame(false);
+	}
+	else
+	{
+		QuestIndicatorIcon->SetHiddenInGame(true);
+	}
+}
+void ANPCBase::CheckQuestStatus()
+{
+	if (APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(this, 0))
+	{
+		if (UQuestComponent* QuestComp = PlayerPawn->FindComponentByClass<UQuestComponent>())
+		{
+			UpdateQuestIndicator(QuestComp);
 		}
 	}
 }

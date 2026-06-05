@@ -29,7 +29,7 @@ public:
 
 protected:
 
-	virtual void NativeConstruct() override;
+	virtual void NativeOnInitialized() override;
 
 	UPROPERTY(meta = (BindWidgetOptional))
 	UButton* Btn_TrackQuest;

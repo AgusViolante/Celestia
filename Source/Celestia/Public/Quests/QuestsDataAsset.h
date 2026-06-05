@@ -113,6 +113,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Info", meta = (MultiLine = "true"))
 	FText QuestDescription;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Dialogues")
+	TArray<FText> QuestOfferDialogue;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Dialogues")
+	TArray<FText> QuestTurnInDialogue;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Info")
 	EQuestType QuestType;
 
@@ -148,4 +154,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Chain")
 	UQuestDataAsset* NextQuest;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Info")
+	bool bAutoTurnIn = false;
 };

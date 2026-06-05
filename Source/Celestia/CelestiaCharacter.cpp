@@ -155,14 +155,23 @@ void ACelestiaCharacter::BeginPlay()
 			if (UQuestComponent* QuestComp = FindComponentByClass<UQuestComponent>())
 			{
 				QuestComp->OnObjectiveUpdated.AddDynamic(PlayerHUDInstance, &UUIPlayerHUD::UpdateTrackedQuest);
-
 				QuestComp->OnQuestTracked.AddDynamic(PlayerHUDInstance, &UUIPlayerHUD::UpdateTrackedQuest);
-
 				QuestComp->OnQuestRewardsGranted.AddDynamic(this, &ACelestiaCharacter::ReceiveQuestRewards);
-
 				QuestComp->OnQuestUntracked.AddDynamic(PlayerHUDInstance, &UUIPlayerHUD::ClearTrackedQuest);
+				QuestComp->OnQuestAccepted.AddDynamic(PlayerHUDInstance, &UUIPlayerHUD::ShowNewQuestNotification);
 
-				PlayerHUDInstance->ClearTrackedQuest();
+				if (QuestComp->TrackedQuestData)
+				{
+					FActiveQuest TrackedActiveQuest;
+					if (QuestComp->GetActiveQuestData(QuestComp->TrackedQuestData, TrackedActiveQuest))
+					{
+						PlayerHUDInstance->UpdateTrackedQuest(TrackedActiveQuest);
+					}
+				}
+				else
+				{
+					PlayerHUDInstance->ClearTrackedQuest();
+				}
 			}
 
 		}

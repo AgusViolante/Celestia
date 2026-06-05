@@ -18,9 +18,36 @@ void AEnemySpawner::BeginPlay()
 {
     Super::BeginPlay();
 
+    RespawnTimerHandles.Init(FTimerHandle(), SpawnPoints.Num());
+
     if (bSpawnInitially)
     {
         SpawnAllAtBeginPlay();
+    }
+    else
+    {
+        for (int32 i = 0; i < SpawnPoints.Num(); ++i)
+        {
+            if (SpawnPoints[i])
+            {
+                FTimerDelegate Del;
+                Del.BindUFunction(this, FName("DoRespawnByIndex"), i);
+
+                if (UWorld* W = GetWorld())
+                {
+                    W->GetTimerManager().SetTimer(RespawnTimerHandles[i], Del, RespawnDelay, false);
+                }
+            }
+        }
+    }
+}
+void AEnemySpawner::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    Super::EndPlay(EndPlayReason);
+
+    if (UWorld* W = GetWorld())
+    {
+        W->GetTimerManager().ClearAllTimersForObject(this);
     }
 }
 
@@ -64,7 +91,6 @@ void AEnemySpawner::SpawnEnemyAtIndex(int32 SpawnIndex)
         return;
     }
 
-    // Solo pasamos los puntos
     NewEnemy->EnemyLevel = LevelToSpawn;
     NewEnemy->PatrolPoints = PatrolPointsToAssign;
     NewEnemy->bAlreadyDied = false;
@@ -81,7 +107,6 @@ void AEnemySpawner::SpawnEnemyAtIndex(int32 SpawnIndex)
         NewEnemy->HealthComponent->OnDeath.AddDynamic(this, &AEnemySpawner::OnSpawnedEnemyDeath);
     }
 
-    // El cerebro arranca solo en el OnPossess del controlador, ya no llamamos a StartPatrol
     NewEnemy->SpawnDefaultController();
 
     EnemyToSpawnIndexMap.Add(NewEnemy, SpawnIndex);
@@ -104,10 +129,9 @@ void AEnemySpawner::OnSpawnedEnemyDeath(AActor* DeadOwner)
     if (UWorld* W = GetWorld())
     {
         FTimerDelegate Del;
-        Del.BindUObject(this, &AEnemySpawner::DoRespawnByIndex, FoundIndex);
+        Del.BindUFunction(this, FName("DoRespawnByIndex"), FoundIndex);
 
-        FTimerHandle Handle;
-        W->GetTimerManager().SetTimer(Handle, Del, RespawnDelay, false);
+        W->GetTimerManager().SetTimer(RespawnTimerHandles[FoundIndex], Del, RespawnDelay, false);
     }
     else
     {
@@ -115,11 +139,14 @@ void AEnemySpawner::OnSpawnedEnemyDeath(AActor* DeadOwner)
     }
 }
 
-
 void AEnemySpawner::DoRespawnByIndex(int32 SpawnIndex)
 {
     if (!SpawnPoints.IsValidIndex(SpawnIndex)) return;
 
+    if (UWorld* W = GetWorld())
+    {
+        W->GetTimerManager().ClearTimer(RespawnTimerHandles[SpawnIndex]);
+    }
+
     SpawnEnemyAtIndex(SpawnIndex);
 }
-

@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Components/BillboardComponent.h"
+#include "Components/WidgetComponent.h"
 #include "../../Quests/QuestsDataAsset.h"
 #include "NPCBase.generated.h"
 
@@ -53,4 +55,24 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interaction")
 	void OpenCrafting(AActor* Interactor);
 	virtual void OpenCrafting_Implementation(AActor* Interactor) {}
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
+	UBillboardComponent* QuestIndicatorIcon;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Quests | Icons")
+	UTexture2D* Icon_NewQuest;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Quests | Icons")
+	UTexture2D* Icon_TurnInQuest;
+
+	UFUNCTION(BlueprintCallable, Category = "Quests | UI")
+	void UpdateQuestIndicator(class UQuestComponent* PlayerQuestComp);
+
+protected:
+	virtual void BeginPlay() override;
+
+	FTimerHandle QuestIndicatorTimerHandle;
+
+	UFUNCTION()
+	void CheckQuestStatus();
 };
