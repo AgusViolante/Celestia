@@ -1,5 +1,3 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -8,8 +6,7 @@
 #include "Components/StatsComponent.h"
 #include "Interfaces/I_PickUp.h"
 #include "Interfaces/StunnableInterface.h"
-
-
+#include "CelestiaCharacter.generated.h"
 
 class USpringArmComponent;
 class UCameraComponent;
@@ -18,7 +15,6 @@ class UInputMappingContext;
 class UHealthComponent;
 class UDashComponent;
 struct FInputActionValue;
-struct FInputActionInstance;
 class UUIPlayerHUD;
 class UStaminaComponent;
 class UProgressionComponent;
@@ -26,60 +22,49 @@ class UStatsComponent;
 class UManaComponent;
 class UNiagaraSystem;
 class UNiagaraComponent;
+class UAnimMontage;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
-
-#include "CelestiaCharacter.generated.h"
-
 
 UCLASS(abstract)
 class CELESTIA_API ACelestiaCharacter : public ACharacter, public II_PickUp, public IStunnableInterface
 {
 	GENERATED_BODY()
 
-	/** Camera boom positioning the camera behind the character */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
-	USpringArmComponent* CameraBoom;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<USpringArmComponent> CameraBoom;
 
-	/** Follow camera */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
-	UCameraComponent* FollowCamera;
-	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UCameraComponent> FollowCamera;
+
 protected:
 
-	/** Jump Input Action */
-	UPROPERTY(EditAnywhere, Category="Input")
-	UInputAction* JumpAction;
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<UInputAction> JumpAction;
 
-	/** Move Input Action */
-	UPROPERTY(EditAnywhere, Category="Input")
-	UInputAction* MoveAction;
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<UInputAction> MoveAction;
 
-	/** Look Input Action */
-	UPROPERTY(EditAnywhere, Category="Input")
-	UInputAction* LookAction;
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<UInputAction> LookAction;
 
-	/** Mouse Look Input Action */
-	UPROPERTY(EditAnywhere, Category="Input")
-	UInputAction* MouseLookAction;
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<UInputAction> MouseLookAction;
 
-	UPROPERTY(EditAnywhere, Category="Input")
-	UInputAction* Sprint;
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<UInputAction> Sprint;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Input")
-	UInputAction* IA_Dash;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Input")
-	UInputAction* IA_Heal;
+	TObjectPtr<UInputAction> IA_Dash;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-	UInputAction* InteractAction;
+	TObjectPtr<UInputAction> InteractAction;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Input")
-	UInputMappingContext* IMC_Default;
+	TObjectPtr<UInputMappingContext> IMC_Default;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Dash")
-	UDashComponent* DashComponent;
+	TObjectPtr<UDashComponent> DashComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UProgressionComponent> ProgressionComponent;
@@ -90,55 +75,27 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UManaComponent> ManaComponent;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Input")
-	UInputAction* IA_Mana;
-
-	UFUNCTION()
-	void Debug_UseManaPotionInput();
-
 public:
 
-	/** Constructor */
 	ACelestiaCharacter();
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	//Componentes
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Components")
-	UHealthComponent* HealthComponent;
-
-
-	//Variables
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
-	int32 PotionCount = 0;
-
-	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	void AddPotion(int32 AmountToAdd);
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Potion")
-	float HealPerPotion = 25.f;
-
-	UFUNCTION(BlueprintCallable, Category = "Potion")
-	bool TryUsePotion(int32 NumPotions = 1);
-
-	UFUNCTION(BlueprintCallable, Category = "Potion")
-	bool UseOnePotion();
-
-	UFUNCTION()
-	void Debug_UsePotionInput();
+	TObjectPtr<UHealthComponent> HealthComponent;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI")
 	TSubclassOf<UUIPlayerHUD> PlayerHUDClass;
 
 	UPROPERTY()
-	UUIPlayerHUD* PlayerHUDInstance;
+	TObjectPtr<UUIPlayerHUD> PlayerHUDInstance;
 
 	UFUNCTION()
 	void ReceiveQuestRewards(int32 CoinsReward, const TArray<FItemReward>& ItemsReward);
 
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Components")
-	UStaminaComponent* StaminaComponent;
+	TObjectPtr<UStaminaComponent> StaminaComponent;
 
-//E input
 	void OnInteractInput();
 
 	UFUNCTION(Server, Reliable, WithValidation)
@@ -156,30 +113,26 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-	/** Initialize input action bindings */
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	UFUNCTION()
+	void HandleTakeAnyDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 
 	UFUNCTION(BlueprintCallable)
 	virtual void OnDeath(AActor* DeadOwner);
 
-	// --- DAÑO DE CAÍDA ---
-	// Variable oculta para llevar el registro
 	UPROPERTY()
 	float MaxZHeightDuringFall = 0.f;
 
-	// Distancia mínima en el aire para empezar a sufrir daño
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Fall Damage")
 	float MinFallDistance = 1000.f;
 
-	// Distancia que causa el daño máximo
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Fall Damage")
 	float MaxFallDistance = 2000.f;
 
-	// PORCENTAJE de daño si caés la distancia mínima (Ej: 10.0 = 10% de tu vida máxima)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Fall Damage")
 	float MinFallDamagePercent = 10.f;
 
-	// PORCENTAJE de daño si caés la distancia máxima (Ej: 100.0 = Muerte instantánea)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Fall Damage")
 	float MaxFallDamagePercent = 100.f;
 
@@ -195,21 +148,8 @@ protected:
 	UFUNCTION()
 	void OnMaxHealthCalculated(float NewMaxHealth);
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
-	int32 ManaPotionCount = 0;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Potion")
-	float RestorePerManaPotion = 25.f;
-
-	UFUNCTION(BlueprintCallable, Category = "Inventory")
-	void AddManaPotion(int32 AmountToAdd);
-
-	UFUNCTION(BlueprintCallable, Category = "Potion")
-	bool TryUseManaPotion(int32 NumPotions = 1);
-
-	// --- VFX DE LEVEL UP ---
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "VFX")
-	UNiagaraSystem* LevelUpVFX;
+	TObjectPtr<UNiagaraSystem> LevelUpVFX;
 
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multicast_PlayLevelUpVFX();
@@ -217,28 +157,27 @@ protected:
 	UFUNCTION()
 	void TriggerLevelUpVFX(int32 NewLevel);
 
-	// --- VARIABLES DE STUN ---
 	UPROPERTY(EditAnywhere, Category = "Abilities | Stun")
-	UAnimMontage* StunMontage;
+	TObjectPtr<UAnimMontage> StunMontage;
 
 	FTimerHandle StunTimerHandle;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Abilities | Stun")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_IsStunned, Category = "Abilities | Stun")
 	bool bIsStunned = false;
 
+	UFUNCTION()
+	void OnRep_IsStunned();
+
 	UPROPERTY(EditAnywhere, Category = "Abilities | Stun")
-	UNiagaraSystem* StunVFX; 
+	TObjectPtr<UNiagaraSystem> StunVFX;
 
 	UPROPERTY()
-	class UNiagaraComponent* ActiveStunVFX;
-
-	// --- FUNCION DE LIBERACION ---
+	TObjectPtr<UNiagaraComponent> ActiveStunVFX;
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Abilities | Stun")
 	void OnStunEnded();
 
 	void ReleaseStun();
-	//AHOGO
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Stamina|Swimming")
 	float DrownDamagePerTick = 10.f;
@@ -256,7 +195,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Stamina|Swimming")
 	float SwimStaminaCostPerSecond = 0.5f;
 
-	//DETECCIÓN DE AGUA
 	UFUNCTION()
 	void OnWaterOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
@@ -271,54 +209,38 @@ protected:
 	UPROPERTY()
 	float CurrentWaterSurfaceZ = 0.f;
 
-protected:
-
-	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
-
-	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
 
 public:
 
-	/** Handles move inputs from either controls or UI interfaces */
-	UFUNCTION(BlueprintCallable, Category="Input")
+	UFUNCTION(BlueprintCallable, Category = "Input")
 	virtual void DoMove(float Right, float Forward);
 
-	/** Handles look inputs from either controls or UI interfaces */
-	UFUNCTION(BlueprintCallable, Category="Input")
+	UFUNCTION(BlueprintCallable, Category = "Input")
 	virtual void DoLook(float Yaw, float Pitch);
 
-	/** Handles jump pressed inputs from either controls or UI interfaces */
-	UFUNCTION(BlueprintCallable, Category="Input")
+	UFUNCTION(BlueprintCallable, Category = "Input")
 	virtual void DoJumpStart();
 
-	/** Handles jump pressed inputs from either controls or UI interfaces */
-	UFUNCTION(BlueprintCallable, Category="Input")
+	UFUNCTION(BlueprintCallable, Category = "Input")
 	virtual void DoJumpEnd();
 
-	UFUNCTION(BlueprintCallable, Category="Input")
+	UFUNCTION(BlueprintCallable, Category = "Input")
 	virtual void Sprinting();
 
-	UFUNCTION(BlueprintCallable, Category="Input")
+	UFUNCTION(BlueprintCallable, Category = "Input")
 	virtual void StopSprinting();
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_SetSprinting(bool bIsSprinting);
 
 	virtual void Tick(float DeltaTime) override;
-
 	virtual void Landed(const FHitResult& Hit) override;
-	
-	UPROPERTY(BlueprintReadOnly, Category = "Swimming")
+
+	UPROPERTY(BlueprintReadOnly, Replicated, Category = "Swimming")
 	bool bIsSwimmingCustom = false;
 
-public:
-
-	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
-
-	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 };
-

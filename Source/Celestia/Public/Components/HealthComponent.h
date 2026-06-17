@@ -5,12 +5,10 @@
 #include "Interfaces/DeathInterface.h"
 #include "HealthComponent.generated.h"
 
-
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDeathSignature, AActor*, DeadOwner);
-
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FOnHealthChangedSignature, UHealthComponent*, HealthComp, float, Health, float, MaxHealth, float, HealthDelta);
 
-UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
+UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class CELESTIA_API UHealthComponent : public UActorComponent
 {
     GENERATED_BODY()
@@ -18,44 +16,51 @@ class CELESTIA_API UHealthComponent : public UActorComponent
 public:
     UHealthComponent();
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Health")
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category = "Health")
     float MaxHealth = 100.f;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Health")
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_Health, Category = "Health")
     float Health;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Health|Regen")
+    UFUNCTION()
+    void OnRep_Health(float OldHealth);
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health|Regen")
     bool bAutoRegen = true;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Health|Regen", meta=(EditCondition="bAutoRegen"))
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health|Regen", meta = (EditCondition = "bAutoRegen"))
     float RegenDelaySeconds = 10.f;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Health|Regen", meta=(EditCondition="bAutoRegen"))
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health|Regen", meta = (EditCondition = "bAutoRegen"))
     float RegenPerSecond = 10.f;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Health|Regen", meta=(EditCondition="bAutoRegen"))
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health|Regen", meta = (EditCondition = "bAutoRegen"))
     float RegenTickInterval = 1.f;
 
-    UPROPERTY(BlueprintAssignable, Category="Health")
+    UPROPERTY(BlueprintAssignable, Category = "Health")
     FOnDeathSignature OnDeath;
 
     UPROPERTY(BlueprintAssignable, Category = "Health")
     FOnHealthChangedSignature OnHealthChanged;
 
     UFUNCTION(BlueprintCallable, Category = "Health")
-    void TakeDamage(float Amount, bool bIsCritical = false, bool bIgnoreDefense = false);
+    void TakeDamage(float Amount, bool bIsCritical = false);
 
-    UFUNCTION(BlueprintCallable, Category="Health")
+    UFUNCTION(BlueprintCallable, Category = "Health")
     void Heal(float Amount);
 
-    UFUNCTION(BlueprintCallable, Category="Health")
+    UFUNCTION(BlueprintCallable, Category = "Health")
+    void UpdateMaxHealth(float NewMaxHealth);
+
+    UFUNCTION(BlueprintCallable, Category = "Health")
     bool IsDead() const { return Health <= 0.f; }
 
- 
-    UFUNCTION(BlueprintCallable, Category="Health")
+    UFUNCTION(BlueprintCallable, Category = "Health")
     void InitializeAfterSpawn(bool bEnableAutoRegen = true, float InRegenDelaySeconds = -1.f, float InRegenPerSecond = -1.f, float InRegenTickInterval = -1.f);
 
-    UFUNCTION(BlueprintCallable, Category="Health")
+    UFUNCTION(BlueprintCallable, Category = "Health")
     bool IsRegenTimerActive() const;
 
     FString GetOwnerTypeLabel() const;
@@ -66,6 +71,7 @@ protected:
 private:
     float LastDamageTime = 0.f;
     FTimerHandle RegenTimerHandle;
+    bool bHasDied = false;
 
     void RegenTick();
 };

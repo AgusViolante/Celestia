@@ -1,152 +1,124 @@
 #include "Components/HealthComponent.h"
-#include "Components/StatsComponent.h"
 #include "Interfaces/StunnableInterface.h"
 #include "Interfaces/DeathInterface.h"
 #include "Characters/EnemyBase.h"
-#include "../../CelestiaCharacter.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/Actor.h"
 #include "Engine/Engine.h" 
 #include "TimerManager.h"
+#include "Net/UnrealNetwork.h"
 
 UHealthComponent::UHealthComponent()
 {
     PrimaryComponentTick.bCanEverTick = false;
+    SetIsReplicatedByDefault(true);
 
     MaxHealth = 100.f;
     Health = MaxHealth;
+}
 
+void UHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+    DOREPLIFETIME(UHealthComponent, Health);
+    DOREPLIFETIME(UHealthComponent, MaxHealth);
 }
 
 void UHealthComponent::BeginPlay()
 {
     Super::BeginPlay();
 
-    Health = FMath::Clamp(Health, 0.f, MaxHealth);
-
-  
-    if (GetWorld())
+    if (AActor* Owner = GetOwner())
     {
-        LastDamageTime = GetWorld()->GetTimeSeconds();
-    }
-    else
-    {
-        LastDamageTime = 0.f;
-    }
-
-  
-    if (bAutoRegen && GetWorld())
-    {
-        GetWorld()->GetTimerManager().SetTimer(RegenTimerHandle, this, &UHealthComponent::RegenTick, RegenTickInterval, true);
-    }
-
- 
-    if (GEngine)
-    {
-        GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Cyan,
-            FString::Printf(TEXT("Vida inicial: %.2f / %.2f"), Health, MaxHealth));
-    }
-
-    InitializeAfterSpawn(bAutoRegen, RegenDelaySeconds, RegenPerSecond, RegenTickInterval);
-}
-
-void UHealthComponent::TakeDamage(float Amount, bool bIsCritical, bool bIgnoreDefense)
-{
-    if (Amount <= 0.f) return;
-    if (IsDead()) return;
-
-    float FinalDamage = Amount;
-
-    // Si no ignoramos la defensa, calculamos la mitigación
-    if (!bIgnoreDefense)
-    {
-        if (AActor* OwnerActor = GetOwner())
+        if (Owner->HasAuthority())
         {
-            // Buscamos si el que recibe daño tiene Stats (el jugador lo tiene, los enemigos normales tal vez no)
-            if (UStatsComponent* StatsComp = OwnerActor->FindComponentByClass<UStatsComponent>())
+            Health = FMath::Clamp(Health, 0.f, MaxHealth);
+
+            if (GetWorld())
             {
-                // Por ahora usamos MeleeDefense como defensa general
-                float Defense = StatsComp->GetStatValue(ERPGStatType::MeleeDefense);
-
-                // Evitamos divisiones por cero o números negativos en caso de bugs
-                Defense = FMath::Max(0.0f, Defense);
-
-                // Fórmula: Multiplicador porcentual
-                float MitigationMultiplier = 100.0f / (100.0f + Defense);
-                FinalDamage = Amount * MitigationMultiplier;
+                LastDamageTime = GetWorld()->GetTimeSeconds();
             }
+
+            InitializeAfterSpawn(bAutoRegen, RegenDelaySeconds, RegenPerSecond, RegenTickInterval);
         }
     }
+}
+
+void UHealthComponent::OnRep_Health(float OldHealth)
+{
+    float HealthDelta = Health - OldHealth;
+    OnHealthChanged.Broadcast(this, Health, MaxHealth, HealthDelta);
+
+    if (IsDead() && !bHasDied)
+    {
+        bHasDied = true;
+        AActor* Owner = GetOwner();
+        OnDeath.Broadcast(Owner);
+    }
+}
+
+void UHealthComponent::TakeDamage(float Amount, bool bIsCritical)
+{
+    if (!GetOwner() || !GetOwner()->HasAuthority()) return;
+    if (Amount <= 0.f) return;
+    if (IsDead()) return;
 
     if (bIsCritical)
     {
         AActor* Owner = GetOwner();
-        
-
         if (Owner && Owner->Implements<UStunnableInterface>())
         {
-     
             IStunnableInterface::Execute_ApplyStun(Owner, 2.0f);
         }
     }
-    Health = FMath::Clamp(Health - FinalDamage, 0.f, MaxHealth);
 
-    OnHealthChanged.Broadcast(this, Health, MaxHealth, -FinalDamage);
+    Health = FMath::Clamp(Health - Amount, 0.f, MaxHealth);
+
+    OnHealthChanged.Broadcast(this, Health, MaxHealth, -Amount);
 
     if (GetWorld())
     {
         LastDamageTime = GetWorld()->GetTimeSeconds();
     }
 
-    if (GEngine)
+    if (IsDead() && !bHasDied)
     {
-        GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Red,
-            FString::Printf(TEXT("Recibio danio: -%.2f (Danio bruto: %.2f) | Vida: %.2f"), FinalDamage, Amount, Health));
-    }
-
-    if (IsDead())
-    {
+        bHasDied = true;
         AActor* Owner = GetOwner();
         OnDeath.Broadcast(Owner);
-
-        if (GEngine)
-        {
-            GEngine->AddOnScreenDebugMessage(-1, 4.0f, FColor::Black,
-                FString::Printf(TEXT("Murio (owner)")));
-        }
     }
 }
+
 void UHealthComponent::Heal(float Amount)
 {
+    if (!GetOwner() || !GetOwner()->HasAuthority()) return;
     if (Amount <= 0.f) return;
     if (IsDead()) return;
 
-    const float Old = Health;
     Health = FMath::Clamp(Health + Amount, 0.f, MaxHealth);
-
     OnHealthChanged.Broadcast(this, Health, MaxHealth, Amount);
+}
 
-    FString Tipo = GetOwnerTypeLabel();
+void UHealthComponent::UpdateMaxHealth(float NewMaxHealth)
+{
+    if (!GetOwner() || !GetOwner()->HasAuthority()) return;
 
-    if (GEngine)
-    {
-        GEngine->AddOnScreenDebugMessage(-1, 2.5f, FColor::Green,
-            FString::Printf(TEXT("%s curado: +%.2f | Vida actual: %.2f"), *Tipo, Amount, Health));
-    }
+    float HealthDifference = NewMaxHealth - MaxHealth;
+    MaxHealth = NewMaxHealth;
+    Health += HealthDifference;
+    Health = FMath::Clamp(Health, 0.f, MaxHealth);
+
+    OnHealthChanged.Broadcast(this, Health, MaxHealth, HealthDifference);
 }
 
 void UHealthComponent::RegenTick()
 {
-    if (!GetWorld())
-    {
-        UE_LOG(LogTemp, Warning, TEXT("RegenTick: no World"));
-        return;
-    }
+    if (!GetOwner() || !GetOwner()->HasAuthority()) return;
+    if (!GetWorld()) return;
 
     const float Now = GetWorld()->GetTimeSeconds();
     const float SinceLastDamage = Now - LastDamageTime;
-    const bool bTimerActive = GetWorld()->GetTimerManager().IsTimerActive(RegenTimerHandle);
-
 
     if (!bAutoRegen || IsDead()) return;
 
@@ -157,17 +129,13 @@ void UHealthComponent::RegenTick()
         if (Health >= MaxHealth) return;
 
         Heal(Amount);
-
-        if (GEngine)
-        {
-            GEngine->AddOnScreenDebugMessage(-1, 1.5f, FColor::Blue,
-                FString::Printf(TEXT("Auto-regeneracion: +%.2f | Vida actual: %.2f"), Amount, Health));
-        }
     }
 }
 
 void UHealthComponent::InitializeAfterSpawn(bool bEnableAutoRegen, float InRegenDelaySeconds, float InRegenPerSecond, float InRegenTickInterval)
 {
+    if (!GetOwner() || !GetOwner()->HasAuthority()) return;
+
     UWorld* W = GetWorld();
     const float Now = (W ? W->GetTimeSeconds() : 0.f);
 
@@ -188,26 +156,25 @@ void UHealthComponent::InitializeAfterSpawn(bool bEnableAutoRegen, float InRegen
         }
     }
 }
+
 bool UHealthComponent::IsRegenTimerActive() const
 {
     if (!GetWorld()) return false;
     return GetWorld()->GetTimerManager().IsTimerActive(RegenTimerHandle);
 }
 
-    FString UHealthComponent::GetOwnerTypeLabel() const
+FString UHealthComponent::GetOwnerTypeLabel() const
+{
+    if (!GetOwner()) return TEXT("Desconocido");
+
+    if (GetOwner()->IsA(AEnemyBase::StaticClass()))
     {
-        if (!GetOwner()) return TEXT("Desconocido");
-
-        if (GetOwner()->IsA(AEnemyBase::StaticClass()))
-        {
-            return TEXT("Enemigo");
-        }
-        else if (GetOwner()->IsA(ACharacter::StaticClass()))
-        {
-            return TEXT("Jugador");
-        }
-
-        return TEXT("Otro");
+        return TEXT("Enemigo");
     }
-    
+    else if (GetOwner()->IsA(ACharacter::StaticClass()))
+    {
+        return TEXT("Jugador");
+    }
 
+    return TEXT("Otro");
+}
