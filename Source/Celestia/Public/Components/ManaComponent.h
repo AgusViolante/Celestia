@@ -1,4 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
 #pragma once
 
 #include "CoreMinimal.h"
@@ -15,14 +14,22 @@ class CELESTIA_API UManaComponent : public UActorComponent
 public:
 	UManaComponent();
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 protected:
 	virtual void BeginPlay() override;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mana")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_CurrentMana, Category = "Mana")
 	float CurrentMana;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mana")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_MaxMana, Category = "Mana")
 	float MaxMana;
+
+	UFUNCTION()
+	void OnRep_CurrentMana();
+
+	UFUNCTION()
+	void OnRep_MaxMana();
 
 public:
 	UPROPERTY(BlueprintAssignable, Category = "Mana | Events")
@@ -40,7 +47,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Mana")
 	void UpdateMaxMana(float NewMaxMana);
 
-	// Getters
 	float GetCurrentMana() const { return CurrentMana; }
 	float GetMaxMana() const { return MaxMana; }
 

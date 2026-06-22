@@ -1,4 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
 #pragma once
 
 #include "CoreMinimal.h"
@@ -12,6 +11,9 @@ class UHealthComponent;
 class UStatsComponent;
 class UAnimMontage;
 class ATargetPoint;
+class UNiagaraSystem;
+class UNiagaraComponent;
+class AEnemyBase;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FEnemyDeathSignature, AEnemyBase*, Enemy);
 
@@ -21,27 +23,30 @@ class CELESTIA_API AEnemyBase : public ACharacter, public IDeathInterface, publi
 	GENERATED_BODY()
 
 public:
+	typedef AEnemyBase ThisClass;
+
 	AEnemyBase();
 
-	// --- COMPONENTES BASE ---
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UHealthComponent* HealthComponent;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	UStatsComponent* StatsComponent;
+	TObjectPtr<UHealthComponent> HealthComponent;
 
-	// --- EVENTOS Y ESTADO ---
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UStatsComponent> StatsComponent;
+
 	UPROPERTY(BlueprintAssignable, Category = "Enemy | Events")
 	FEnemyDeathSignature OnDeath;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy | State")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_AlreadyDied, Category = "Enemy | State")
 	bool bAlreadyDied = false;
 
-	// --- ANIMACIONES BASE ---
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enemy | Animation")
-	UAnimMontage* Death_A_Montage;
+	UFUNCTION()
+	void OnRep_AlreadyDied();
 
-	// --- SISTEMA DE LOOT ---
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enemy | Animation")
+	TObjectPtr<UAnimMontage> Death_A_Montage;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Enemy | Drops")
 	TSubclassOf<AActor> PotionDropClass;
 
@@ -58,7 +63,6 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Enemy | State")
 	EEnemyClassType EnemyType;
 
-	// --- SISTEMA DE EXPERIENCIA ---
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enemy | Progression", meta = (ExposeOnSpawn = "true"))
 	int32 EnemyLevel = 1;
 
@@ -76,6 +80,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Quests")
 	FName EnemyQuestID;
 
+	UFUNCTION(BlueprintCallable, Category = "AI")
+	AActor* GetAITarget() const;
 
 protected:
 	virtual void BeginPlay() override;
@@ -90,13 +96,21 @@ protected:
 
 	FTimerHandle StunTimerHandle;
 
+	UPROPERTY(ReplicatedUsing = OnRep_IsStunned)
 	bool bIsStunned = false;
+
+	UFUNCTION()
+	void OnRep_IsStunned();
+
 	UPROPERTY(EditAnywhere, Category = "Combat | Stun")
-	class UNiagaraSystem* StunVFX;
+	TObjectPtr<UNiagaraSystem> StunVFX;
 
 	UPROPERTY()
-	class UNiagaraComponent* ActiveStunVFX;
+	TObjectPtr<UNiagaraComponent> ActiveStunVFX;
 
 	UPROPERTY(EditAnywhere, Category = "Combat | Stun")
 	float StunVFXHeightOffset = 100.0f;
+
+	UPROPERTY()
+	TObjectPtr<AActor> LastAttacker;
 };

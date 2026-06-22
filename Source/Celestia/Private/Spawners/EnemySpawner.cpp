@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #include "Spawners/EnemySpawner.h"
 #include "Characters/EnemyBase.h"
 #include "AI/EnemyAIController.h"
@@ -8,15 +6,19 @@
 #include "Engine/World.h"
 #include "TimerManager.h"
 #include "Engine/Engine.h"
+#include "Engine/TargetPoint.h"
 
 AEnemySpawner::AEnemySpawner()
 {
     PrimaryActorTick.bCanEverTick = false;
+    bReplicates = false;
 }
 
 void AEnemySpawner::BeginPlay()
 {
     Super::BeginPlay();
+
+    if (!HasAuthority()) return;
 
     RespawnTimerHandles.Init(FTimerHandle(), SpawnPoints.Num());
 
@@ -41,18 +43,23 @@ void AEnemySpawner::BeginPlay()
         }
     }
 }
+
 void AEnemySpawner::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-    Super::EndPlay(EndPlayReason);
-
-    if (UWorld* W = GetWorld())
+    if (HasAuthority())
     {
-        W->GetTimerManager().ClearAllTimersForObject(this);
+        if (UWorld* W = GetWorld())
+        {
+            W->GetTimerManager().ClearAllTimersForObject(this);
+        }
     }
+    Super::EndPlay(EndPlayReason);
 }
 
 void AEnemySpawner::SpawnAllAtBeginPlay()
 {
+    if (!HasAuthority()) return;
+
     for (int32 i = 0; i < SpawnPoints.Num(); ++i)
     {
         if (SpawnPoints[i])
@@ -64,13 +71,16 @@ void AEnemySpawner::SpawnAllAtBeginPlay()
 
 void AEnemySpawner::SpawnAtIndex(int32 Index)
 {
+    if (!HasAuthority()) return;
+
     if (!SpawnPoints.IsValidIndex(Index)) return;
     SpawnEnemyAtIndex(Index);
 }
+
 void AEnemySpawner::SpawnEnemyAtIndex(int32 SpawnIndex)
 {
-    if (!EnemyClass) return;
-    if (!SpawnPoints.IsValidIndex(SpawnIndex)) return;
+    if (!HasAuthority() || !EnemyClass) return;
+    if (!SpawnPoints.IsValidIndex(SpawnIndex) || !SpawnPoints[SpawnIndex]) return;
 
     UWorld* W = GetWorld();
     if (!W) return;
@@ -87,7 +97,6 @@ void AEnemySpawner::SpawnEnemyAtIndex(int32 SpawnIndex)
 
     if (!NewEnemy)
     {
-        UE_LOG(LogTemp, Warning, TEXT("EnemySpawner: fallo%d"), SpawnIndex);
         return;
     }
 
@@ -95,16 +104,11 @@ void AEnemySpawner::SpawnEnemyAtIndex(int32 SpawnIndex)
     NewEnemy->PatrolPoints = PatrolPointsToAssign;
     NewEnemy->bAlreadyDied = false;
 
-    NewEnemy->InitializeEnemyStats();
-
     UGameplayStatics::FinishSpawningActor(NewEnemy, SpawnTransform);
 
     if (NewEnemy->HealthComponent)
     {
-        NewEnemy->HealthComponent->InitializeAfterSpawn(true, NewEnemy->HealthComponent->RegenDelaySeconds, NewEnemy->HealthComponent->RegenPerSecond, NewEnemy->HealthComponent->RegenTickInterval);
-
-        NewEnemy->HealthComponent->OnDeath.RemoveDynamic(this, &AEnemySpawner::OnSpawnedEnemyDeath);
-        NewEnemy->HealthComponent->OnDeath.AddDynamic(this, &AEnemySpawner::OnSpawnedEnemyDeath);
+        NewEnemy->HealthComponent->OnDeath.AddUniqueDynamic(this, &AEnemySpawner::OnSpawnedEnemyDeath);
     }
 
     NewEnemy->SpawnDefaultController();
@@ -114,6 +118,8 @@ void AEnemySpawner::SpawnEnemyAtIndex(int32 SpawnIndex)
 
 void AEnemySpawner::OnSpawnedEnemyDeath(AActor* DeadOwner)
 {
+    if (!HasAuthority()) return;
+
     AEnemyBase* DeadEnemy = Cast<AEnemyBase>(DeadOwner);
     if (!DeadEnemy) return;
 
@@ -141,6 +147,8 @@ void AEnemySpawner::OnSpawnedEnemyDeath(AActor* DeadOwner)
 
 void AEnemySpawner::DoRespawnByIndex(int32 SpawnIndex)
 {
+    if (!HasAuthority()) return;
+
     if (!SpawnPoints.IsValidIndex(SpawnIndex)) return;
 
     if (UWorld* W = GetWorld())

@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -18,11 +16,9 @@ class CELESTIA_API UUIQuestSlot : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	
 	UPROPERTY(BlueprintReadOnly, Category = "Quest")
 	FActiveQuest MyQuest;
 
-	
 	UPROPERTY(BlueprintAssignable, Category = "Quest | Events")
 	FOnQuestSlotClickedSignature OnQuestSlotClicked;
 
@@ -33,10 +29,10 @@ protected:
 	virtual void NativeConstruct() override;
 
 	UPROPERTY(meta = (BindWidget))
-	UTextBlock* Txt_QuestName;
+	TObjectPtr<UTextBlock> Txt_QuestName;
 
 	UPROPERTY(meta = (BindWidget))
-	UButton* Btn_Select;
+	TObjectPtr<UButton> Btn_Select;
 
 	UFUNCTION()
 	void OnButtonClicked();

@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #include "AI/Tasks/BTTask_MagicAttack.h"
 #include "AI/EnemyAIController.h"
 #include "Characters/RangedEnemy/RangedEnemy.h"
@@ -12,33 +10,21 @@ UBTTask_MagicAttack::UBTTask_MagicAttack()
 
 EBTNodeResult::Type UBTTask_MagicAttack::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
-	AAIController* AIController = OwnerComp.GetAIOwner();
-
-	if (!AIController)
+	if (AAIController* AIController = OwnerComp.GetAIOwner())
 	{
-		return EBTNodeResult::Failed;
+		if (APawn* ControlledPawn = AIController->GetPawn())
+		{
+			if (ARangedEnemy* RangedEnemy = Cast<ARangedEnemy>(ControlledPawn))
+			{
+				RangedEnemy->PerformRangedAttack();
+				return EBTNodeResult::Succeeded;
+			}
+			if (ABossEnemy* BossEnemy = Cast<ABossEnemy>(ControlledPawn))
+			{
+				BossEnemy->PerformRangedAttack();
+				return EBTNodeResult::Succeeded;
+			}
+		}
 	}
-
-	// Declaramos el Pawn controlado de forma segura
-	APawn* ControlledPawn = AIController->GetPawn();
-	if (!ControlledPawn)
-	{
-		return EBTNodeResult::Failed;
-	}
-
-	// 1. Revisamos si es un RangedEnemy
-	if (ARangedEnemy* RangedEnemy = Cast<ARangedEnemy>(ControlledPawn))
-	{
-		RangedEnemy->PerformRangedAttack();
-		return EBTNodeResult::Succeeded;
-	}
-
-	// 2. Revisamos si es el Boss
-	if (ABossEnemy* BossEnemy = Cast<ABossEnemy>(ControlledPawn))
-	{
-		BossEnemy->PerformRangedAttack();
-		return EBTNodeResult::Succeeded;
-	}
-
 	return EBTNodeResult::Failed;
 }

@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -21,7 +19,6 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Chest | Lock Settings")
 	bool CheckPlayerHasKey(AActor* Interactor, const FString& KeyName);
 
-	// Función para que Blueprint elimine la llave del inventario
 	UFUNCTION(BlueprintImplementableEvent, Category = "Chest | Lock Settings")
 	void ConsumePlayerKey(AActor* Interactor, const FString& KeyName);
 

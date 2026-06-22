@@ -1,15 +1,14 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Characters/MeleeEnemy.h" 
-#include "Blueprint/UserWidget.h"
 #include "BossEnemy.generated.h"
 
 class AMagicProjectile;
+class UAnimMontage;
+class UNiagaraSystem;
+class USphereComponent;
+class UUserWidget;
 
 UCLASS()
 class CELESTIA_API ABossEnemy : public AMeleeEnemy
@@ -19,17 +18,19 @@ class CELESTIA_API ABossEnemy : public AMeleeEnemy
 public:
 	ABossEnemy();
 
-	// --- FASES DEL JEFE ---
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Boss | Phase")
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_CurrentPhase, Category = "Boss | Phase")
 	int32 CurrentPhase = 1;
 
-	// Porcentaje de vida (0.0 a 1.0) en el que el jefe pasa a Fase 2
+	UFUNCTION()
+	void OnRep_CurrentPhase();
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Boss | Phase", meta = (ClampMin = "0.1", ClampMax = "0.9"))
 	float Phase2HealthThreshold = 0.5f;
 
-	// --- COMBATE A DISTANCIA (Mágico) ---
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat | Magic")
-	UAnimMontage* RangedAttackMontage;
+	TObjectPtr<UAnimMontage> RangedAttackMontage;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Combat | Magic")
 	TSubclassOf<AMagicProjectile> ProjectileClass;
@@ -40,29 +41,24 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Combat | Magic")
 	void PerformRangedAttack();
 
-	// Se llama desde el AnimNotify (igual que en RangedEnemy)
 	UFUNCTION(BlueprintCallable, Category = "Combat | Magic")
 	void FireMagic();
 
-	// --- EVENTO DE CAMBIO DE FASE ---
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boss | Phase")
-	UAnimMontage* PhaseTransitionMontage;
+	TObjectPtr<UAnimMontage> PhaseTransitionMontage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Boss | Phase")
-	class UNiagaraSystem* PhaseTransitionVFX;
+	TObjectPtr<UNiagaraSystem> PhaseTransitionVFX;
 
 	UFUNCTION(BlueprintCallable, Category = "Boss | Phase")
 	void EnterPhase2();
 
-	// --- MECÁNICAS DE FASE 1 ---
 	UFUNCTION(BlueprintCallable, Category = "Boss | Combat")
 	void LeapTowardsPlayer();
 
-	// --- MECÁNICAS DE FASE 2 ---
 	UFUNCTION(BlueprintCallable, Category = "Boss | Combat")
 	void TeleportAway();
 
-	// Disparo en abanico (3 proyectiles)
 	UFUNCTION(BlueprintCallable, Category = "Combat | Magic")
 	void FireMagicSpread();
 
@@ -70,21 +66,18 @@ public:
 	void OnBossHealthChanged(UHealthComponent* InHealthComp, float NewHealth, float MaxHealth, float HealthDelta);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
-	class USphereComponent* ProximitySphere;
+	TObjectPtr<USphereComponent> ProximitySphere;
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
-	TSubclassOf<class UUserWidget> BossHUDClass;
+	TSubclassOf<UUserWidget> BossHUDClass;
 
 	virtual void Die_Implementation() override;
 
-private:
-	UPROPERTY()
-	class UUserWidget* BossHUDInstance;
-
-
 protected:
-
 	virtual void BeginPlay() override;
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multicast_PlayRangedMontage();
 
 	UFUNCTION()
 	void OnProximityOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);

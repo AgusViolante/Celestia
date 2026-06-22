@@ -1,13 +1,11 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Engine/TargetPoint.h"
 #include "EnemySpawner.generated.h"
 
 class AEnemyBase;
+class ATargetPoint;
 class UHealthComponent;
 
 UCLASS()
@@ -22,10 +20,10 @@ public:
     TSubclassOf<AEnemyBase> EnemyClass;
 
     UPROPERTY(EditAnywhere, Category = "Spawner")
-    TArray<ATargetPoint*> SpawnPoints;
+    TArray<TObjectPtr<ATargetPoint>> SpawnPoints;
 
     UPROPERTY(EditAnywhere, Category = "Spawner")
-    TArray<ATargetPoint*> PatrolPointsToAssign;
+    TArray<TObjectPtr<ATargetPoint>> PatrolPointsToAssign;
 
     UPROPERTY(EditAnywhere, Category = "Spawner")
     float DefaultPatrolAcceptanceRadius = 50.f;
@@ -52,7 +50,7 @@ protected:
     void OnSpawnedEnemyDeath(AActor* DeadOwner);
 
     UPROPERTY()
-    TMap<AEnemyBase*, int32> EnemyToSpawnIndexMap;
+    TMap<TObjectPtr<AEnemyBase>, int32> EnemyToSpawnIndexMap;
 
     UPROPERTY()
     TArray<FTimerHandle> RespawnTimerHandles;

@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -7,21 +5,17 @@
 #include "QuestsDataAsset.h"
 #include "QuestComponent.generated.h"
 
-
 USTRUCT(BlueprintType)
 struct FActiveQuest
 {
 	GENERATED_BODY()
 
-	// La misión original (lectura)
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Quest")
-	UQuestDataAsset* QuestData;
+	TObjectPtr<UQuestDataAsset> QuestData;
 
-	// El progreso actual de los objetivos. ¡Esto es lo que muta!
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Quest")
 	TArray<FQuestObjective> CurrentObjectives;
 
-	// Estado simple de la misión
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Quest")
 	bool bIsReadyToTurnIn;
 
@@ -29,7 +23,6 @@ struct FActiveQuest
 	FActiveQuest(UQuestDataAsset* InQuestData) : QuestData(InQuestData), bIsReadyToTurnIn(false) {}
 };
 
-// Delegados para que la UI se entere de los cambios sin estar leyendo todo el tiempo
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnQuestListUpdatedSignature);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnObjectiveUpdatedSignature, const FActiveQuest&, Quest);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnQuestTrackedSignature, const FActiveQuest&, TrackedQuest);
@@ -46,28 +39,23 @@ class CELESTIA_API UQuestComponent : public UActorComponent
 public:
 	UQuestComponent();
 
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
 protected:
 	virtual void BeginPlay() override;
 
-	// Comprueba si una misión ya completó todos sus objetivos
 	void CheckQuestCompletion(int32 QuestIndex);
+	void CheckDungeonCompletion();
 
 public:
-	// --- VARIABLES PRINCIPALES ---
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category = "Quests")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Quests")
 	TArray<FActiveQuest> ActiveQuests;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category = "Quests")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Quests")
 	TArray<FName> CompletedQuestIDs;
 
-	// La misión que marcaste en la UI para ver en el HUD
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Quests")
-	UQuestDataAsset* TrackedQuestData;
+	TObjectPtr<UQuestDataAsset> TrackedQuestData;
 
-	// --- EVENTOS PARA LA UI ---
 	UPROPERTY(BlueprintAssignable, Category = "Quests | Events")
 	FOnQuestListUpdatedSignature OnQuestListUpdated;
 
@@ -83,6 +71,12 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Quests | Events")
 	FOnQuestItemsConsumedSignature OnQuestItemsConsumed;
 
+	UPROPERTY(BlueprintAssignable, Category = "Quests | Events")
+	FOnQuestUntrackedSignature OnQuestUntracked;
+
+	UPROPERTY(BlueprintAssignable, Category = "Quests | Events")
+	FOnQuestAcceptedSignature OnQuestAccepted;
+
 	UFUNCTION(BlueprintPure, Category = "Quests | UI")
 	bool GetActiveQuestData(UQuestDataAsset* QuestToCheck, FActiveQuest& OutActiveQuest) const;
 
@@ -92,40 +86,61 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Quests | Validation")
 	bool CanAcceptQuest(UQuestDataAsset* QuestToCheck) const;
 
-	UPROPERTY(BlueprintAssignable, Category = "Quests | Events")
-	FOnQuestUntrackedSignature OnQuestUntracked;
-
-	UPROPERTY(BlueprintAssignable, Category = "Quests | Events")
-	FOnQuestAcceptedSignature OnQuestAccepted;
-
 	UPROPERTY(EditAnywhere, Category = "Quests | Auto")
 	TArray<UQuestDataAsset*> StartingQuests;
 
-	// Misiones que se otorgan solas al alcanzar un nivel
 	UPROPERTY(EditAnywhere, Category = "Quests | Auto")
 	TArray<UQuestDataAsset*> AutoUnlockByLevelQuests;
 
 	UFUNCTION()
 	void OnPlayerLevelUp(int32 NewLevel);
 
-	// --- FUNCIONES CORE ---
-
-	// Llamada por el NPC cuando aceptas una misión
 	UFUNCTION(BlueprintCallable, Category = "Quests")
 	void AcceptQuest(UQuestDataAsset* NewQuest);
 
-	// Llamada por los enemigos, triggers, etc. para avanzar la misión
 	UFUNCTION(BlueprintCallable, Category = "Quests")
 	void UpdateObjective(EObjectiveType Type, FName TargetID, TSubclassOf<class AItemBase> TargetItemClass, int32 Amount);
-
-	// Llamada por la UI cuando seleccionas una misión para seguir
-	UFUNCTION(BlueprintCallable, Category = "Quests")
-	void TrackQuest(UQuestDataAsset* QuestToTrack);
 
 	UFUNCTION(BlueprintCallable, Category = "Quests")
 	void TurnInQuest(UQuestDataAsset* QuestToTurnIn);
 
-private:
-	
-	void CheckDungeonCompletion();
+	UFUNCTION(BlueprintCallable, Category = "Quests")
+	void TrackQuest(UQuestDataAsset* QuestToTrack);
+
+	UFUNCTION(BlueprintCallable, Category = "Quests | Network")
+	void ClientInitializeQuests();
+
+protected:
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_RequestQuestData();
+
+	UFUNCTION(Client, Reliable)
+	void Client_ReceiveQuestData(const TArray<UQuestDataAsset*>& ServerActiveQuests, const TArray<int32>& ServerObjectiveProgress, const TArray<bool>& ServerQuestStatus, const TArray<FName>& ServerCompleted);
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_AcceptQuest(UQuestDataAsset* NewQuest);
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_UpdateObjective(EObjectiveType Type, FName TargetID, TSubclassOf<class AItemBase> TargetItemClass, int32 Amount);
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_TurnInQuest(UQuestDataAsset* QuestToTurnIn);
+
+	void Internal_AcceptQuest(UQuestDataAsset* NewQuest);
+	TArray<UQuestDataAsset*> Internal_UpdateObjective(EObjectiveType Type, FName TargetID, TSubclassOf<class AItemBase> TargetItemClass, int32 Amount);
+	void Internal_TurnInQuest(UQuestDataAsset* QuestToTurnIn);
+	void Internal_ForceSyncGlobalObjective(UQuestDataAsset* GlobalQuest, EObjectiveType Type, FName TargetID, TSubclassOf<class AItemBase> TargetItemClass, int32 Amount);
+
+	UFUNCTION(Client, Reliable)
+	void Client_SyncQuestAccepted(UQuestDataAsset* NewQuest);
+
+	UFUNCTION(Client, Reliable)
+	void Client_SyncObjectiveUpdated(UQuestDataAsset* QuestData, const TArray<int32>& NewProgress, bool bIsReadyToTurnIn);
+
+	UFUNCTION(Client, Reliable)
+	void Client_SyncQuestTurnedIn(UQuestDataAsset* QuestTurnedIn);
+
+	UFUNCTION(Client, Reliable)
+	void Client_NotifyQuestRewards(int32 Coins, const TArray<FItemReward>& Items);
 };

@@ -232,6 +232,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Input")
 	virtual void StopSprinting();
 
+	UFUNCTION(BlueprintCallable, Category = "Input")
+	virtual void DoDash();
+
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_SetSprinting(bool bIsSprinting);
 

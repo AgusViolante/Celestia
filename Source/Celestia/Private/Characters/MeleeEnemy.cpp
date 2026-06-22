@@ -1,6 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "Characters/MeleeEnemy.h"
 #include "Components/SphereComponent.h"
 #include "Components/HealthComponent.h"
@@ -25,10 +22,10 @@ void AMeleeEnemy::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (DamageSphere)
+	if (DamageSphere && HasAuthority())
 	{
-		DamageSphere->OnComponentBeginOverlap.AddDynamic(this, &AMeleeEnemy::OnHitPlayerBeginOverlap);
-		DamageSphere->OnComponentEndOverlap.AddDynamic(this, &AMeleeEnemy::OnHitPlayerEndOverlap);
+		DamageSphere->OnComponentBeginOverlap.AddUniqueDynamic(this, &AMeleeEnemy::OnHitPlayerBeginOverlap);
+		DamageSphere->OnComponentEndOverlap.AddUniqueDynamic(this, &AMeleeEnemy::OnHitPlayerEndOverlap);
 	}
 }
 
@@ -71,6 +68,11 @@ void AMeleeEnemy::ApplyDamage()
 {
 	if (!DamageTarget || bIsStunned) return;
 
+	Multicast_PlayAttackMontage();
+}
+
+void AMeleeEnemy::Multicast_PlayAttackMontage_Implementation()
+{
 	if (AttackMontage && GetMesh()->GetAnimInstance())
 	{
 		if (!GetMesh()->GetAnimInstance()->Montage_IsPlaying(AttackMontage))
@@ -82,7 +84,7 @@ void AMeleeEnemy::ApplyDamage()
 
 void AMeleeEnemy::ExecuteMeleeHit()
 {
-	if (!DamageTarget || bIsStunned) return;
+	if (!DamageTarget || bIsStunned || !HasAuthority()) return;
 
 	if (UHealthComponent* TargetHealthComp = DamageTarget->FindComponentByClass<UHealthComponent>())
 	{
@@ -102,20 +104,21 @@ void AMeleeEnemy::ExecuteMeleeHit()
 			}
 		}
 
-		if (bWasCriticalHit && GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Yellow, TEXT("¡El Enemigo asestó un GOLPE CRÍTICO FÍSICO!"));
-		}
-
 		TargetHealthComp->TakeDamage(EnemyDamageAmount * DamageInterval, bWasCriticalHit);
 
 		if (TargetHealthComp->IsDead()) StopDamage();
 	}
 }
+
 void AMeleeEnemy::Die_Implementation()
 {
-	StopDamage();
-	if (DamageSphere) DamageSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
+	if (HasAuthority())
+	{
+		StopDamage();
+		if (DamageSphere)
+		{
+			DamageSphere->SetCollisionResponseToAllChannels(ECR_Ignore);
+		}
+	}
 	Super::Die_Implementation();
 }

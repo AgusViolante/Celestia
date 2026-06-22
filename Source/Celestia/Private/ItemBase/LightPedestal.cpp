@@ -1,16 +1,14 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "ItemBase/LightPedestal.h"
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Quests/QuestComponent.h"
 #include "GameFramework/Character.h"
-#include "Components/InputComponent.h"
+#include "Net/UnrealNetwork.h"
 
 ALightPedestal::ALightPedestal()
 {
 	PrimaryActorTick.bCanEverTick = false;
+	bReplicates = true;
 
 	PedestalMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PedestalMesh"));
 	RootComponent = PedestalMesh;
@@ -25,65 +23,37 @@ ALightPedestal::ALightPedestal()
 	TriggerZone->SetCollisionProfileName(TEXT("Trigger"));
 }
 
+void ALightPedestal::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ALightPedestal, bCrystalPlaced);
+}
+
 void ALightPedestal::BeginPlay()
 {
 	Super::BeginPlay();
-
-	TriggerZone->OnComponentBeginOverlap.AddDynamic(this, &ALightPedestal::OnOverlapBegin);
-	TriggerZone->OnComponentEndOverlap.AddDynamic(this, &ALightPedestal::OnOverlapEnd);
 }
 
-void ALightPedestal::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void ALightPedestal::Interact_Implementation(AActor* Interactor)
 {
-	if (bCrystalPlaced) return;
+	if (!HasAuthority() || bCrystalPlaced) return;
 
-	if (OtherActor && OtherActor->IsA(ACharacter::StaticClass()))
+	if (Interactor && TryConsumeCrystalFromInventory(Interactor))
 	{
-		APlayerController* PC = Cast<APlayerController>(Cast<ACharacter>(OtherActor)->GetController());
-		if (PC)
+		bCrystalPlaced = true;
+		OnRep_CrystalPlaced();
+
+		if (UQuestComponent* QuestComp = Interactor->FindComponentByClass<UQuestComponent>())
 		{
-			EnableInput(PC);
-			if (InputComponent)
-			{
-				InputComponent->BindKey(EKeys::E, IE_Pressed, this, &ALightPedestal::InteractToPlaceCrystal);
-			}
+			QuestComp->UpdateObjective(EObjectiveType::Location, PedestalID, nullptr, 1);
 		}
 	}
 }
 
-void ALightPedestal::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+void ALightPedestal::OnRep_CrystalPlaced()
 {
-	if (OtherActor && OtherActor->IsA(ACharacter::StaticClass()))
+	if (CrystalMesh)
 	{
-		APlayerController* PC = Cast<APlayerController>(Cast<ACharacter>(OtherActor)->GetController());
-		if (PC)
-		{
-			DisableInput(PC);
-		}
+		CrystalMesh->SetVisibility(bCrystalPlaced);
 	}
 }
-
-void ALightPedestal::InteractToPlaceCrystal()
-{
-	if (bCrystalPlaced) return;
-
-	AActor* PlayerActor = GetWorld()->GetFirstPlayerController()->GetPawn();
-	if (!PlayerActor) return;
-
-	if (!TryConsumeCrystalFromInventory(PlayerActor))
-	{
-		return;
-	}
-
-	bCrystalPlaced = true;
-	CrystalMesh->SetVisibility(true);
-
-	DisableInput(GetWorld()->GetFirstPlayerController());
-
-	UQuestComponent* QuestComp = PlayerActor->FindComponentByClass<UQuestComponent>();
-	if (QuestComp)
-	{
-		QuestComp->UpdateObjective(EObjectiveType::Location, PedestalID, nullptr, 1);
-	}
-}
-

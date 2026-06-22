@@ -4,10 +4,7 @@
 #include "Components/ActorComponent.h"
 #include "StaminaComponent.generated.h"
 
-
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnStaminaChangedSignature, class UStaminaComponent*, StaminaComp, float, CurrentStamina, float, MaxStamina);
-
-
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnStaminaExhaustedSignature);
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
@@ -18,10 +15,12 @@ class CELESTIA_API UStaminaComponent : public UActorComponent
 public:
 	UStaminaComponent();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stamina")
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_MaxStamina, Category = "Stamina")
 	float MaxStamina = 50.f;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stamina")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_CurrentStamina, Category = "Stamina")
 	float CurrentStamina;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stamina|Rates")
@@ -50,6 +49,12 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+
+	UFUNCTION()
+	void OnRep_CurrentStamina();
+
+	UFUNCTION()
+	void OnRep_MaxStamina();
 
 public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;

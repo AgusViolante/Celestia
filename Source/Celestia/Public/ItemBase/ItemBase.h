@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -35,6 +33,5 @@ protected:
 	bool bIsPickedUp = false;
 
 public:
-	// Implementación de la orden de interactuar que manda el jugador
 	virtual void Interact_Implementation(AActor* Interactor) override;
 };

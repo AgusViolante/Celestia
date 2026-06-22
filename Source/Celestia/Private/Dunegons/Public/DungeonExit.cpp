@@ -1,16 +1,14 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #include "Dunegons/Public/DungeonExit.h"
 #include "Components/BoxComponent.h"
 #include "Quests/QuestComponent.h"
 #include "Blueprint/UserWidget.h"
 #include "GameFramework/Character.h"
-#include "Kismet/GameplayStatics.h"
-#include "Components/InputComponent.h"
+#include "../../../CelestiaCharacter.h"
 
 ADungeonExit::ADungeonExit()
 {
 	PrimaryActorTick.bCanEverTick = false;
+	bReplicates = true;
 
 	TriggerZone = CreateDefaultSubobject<UBoxComponent>(TEXT("TriggerZone"));
 	RootComponent = TriggerZone;
@@ -20,7 +18,7 @@ ADungeonExit::ADungeonExit()
 
 void ADungeonExit::BeginPlay()
 {
-	Super::BeginPlay();
+	AActor::BeginPlay();
 
 	TriggerZone->OnComponentBeginOverlap.AddDynamic(this, &ADungeonExit::OnOverlapBegin);
 	TriggerZone->OnComponentEndOverlap.AddDynamic(this, &ADungeonExit::OnOverlapEnd);
@@ -28,20 +26,18 @@ void ADungeonExit::BeginPlay()
 
 bool ADungeonExit::IsDungeonQuestComplete(AActor* PlayerActor)
 {
-	UQuestComponent* QuestComp = PlayerActor->FindComponentByClass<UQuestComponent>();
-	if (!QuestComp) return false;
-
-	for (const FActiveQuest& Quest : QuestComp->ActiveQuests)
+	if (UQuestComponent* QuestComp = PlayerActor->FindComponentByClass<UQuestComponent>())
 	{
-		for (const FQuestObjective& Obj : Quest.CurrentObjectives)
+		for (const FActiveQuest& Quest : QuestComp->ActiveQuests)
 		{
-			// Busca el objetivo de esta mazmorra
-			if (Obj.ObjectiveType == EObjectiveType::Dungeon && Obj.TargetID == DungeonID)
+			for (const FQuestObjective& Obj : Quest.CurrentObjectives)
 			{
-				// Si la cantidad actual es igual o mayor a la requerida, está completa
-				if (Obj.CurrentAmount >= Obj.RequiredAmount)
+				if (Obj.ObjectiveType == EObjectiveType::Dungeon && Obj.TargetID == DungeonID)
 				{
-					return true;
+					if (Obj.CurrentAmount >= Obj.RequiredAmount)
+					{
+						return true;
+					}
 				}
 			}
 		}
@@ -51,10 +47,9 @@ bool ADungeonExit::IsDungeonQuestComplete(AActor* PlayerActor)
 
 void ADungeonExit::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (OtherActor && OtherActor->IsA(ACharacter::StaticClass()))
+	if (ACharacter* PlayerChar = Cast<ACharacter>(OtherActor))
 	{
-		// Solo permite interactuar si la misión de esta mazmorra está completa
-		if (IsDungeonQuestComplete(OtherActor))
+		if (PlayerChar->IsLocallyControlled() && IsDungeonQuestComplete(PlayerChar))
 		{
 			if (PromptWidgetClass && !PromptInstance)
 			{
@@ -65,58 +60,32 @@ void ADungeonExit::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* O
 			{
 				PromptInstance->AddToViewport();
 			}
-
-			APlayerController* PC = Cast<APlayerController>(Cast<ACharacter>(OtherActor)->GetController());
-			if (PC)
-			{
-				EnableInput(PC);
-
-				if (InputComponent)
-				{
-					InputComponent->BindKey(EKeys::E, IE_Pressed, this, &ADungeonExit::InteractToExit);
-				}
-			}
 		}
 	}
 }
 
 void ADungeonExit::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (OtherActor && OtherActor->IsA(ACharacter::StaticClass()))
+	if (ACharacter* PlayerChar = Cast<ACharacter>(OtherActor))
 	{
-		if (PromptInstance && PromptInstance->IsInViewport())
+		if (PlayerChar->IsLocallyControlled() && PromptInstance && PromptInstance->IsInViewport())
 		{
 			PromptInstance->RemoveFromParent();
 		}
-
-		APlayerController* PC = Cast<APlayerController>(Cast<ACharacter>(OtherActor)->GetController());
-		if (PC)
-		{
-			DisableInput(PC);
-		}
 	}
 }
 
-void ADungeonExit::InteractToExit()
+void ADungeonExit::Interact_Implementation(AActor* Interactor)
 {
-	if (TeleportDestination)
+	if (!HasAuthority()) return;
+
+	if (TeleportDestination && Interactor && IsDungeonQuestComplete(Interactor))
 	{
-		ACharacter* PlayerCharacter = UGameplayStatics::GetPlayerCharacter(this, 0);
-		if (PlayerCharacter)
+		Interactor->SetActorLocationAndRotation(TeleportDestination->GetActorLocation(), TeleportDestination->GetActorRotation());
+
+		if (ACelestiaCharacter* CelestiaChar = Cast<ACelestiaCharacter>(Interactor))
 		{
-			PlayerCharacter->TeleportTo(TeleportDestination->GetActorLocation(), TeleportDestination->GetActorRotation());
-
-			if (PromptInstance && PromptInstance->IsInViewport())
-			{
-				PromptInstance->RemoveFromParent();
-			}
-
-			APlayerController* PC = Cast<APlayerController>(PlayerCharacter->GetController());
-			if (PC)
-			{
-				DisableInput(PC);
-			}
+			CelestiaChar->ResetFallDamageTracking();
 		}
 	}
 }
-

@@ -1,4 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
 #pragma once
 
 #include "CoreMinimal.h"
@@ -24,18 +23,15 @@ public:
 protected:
     virtual void OnPossess(APawn* InPawn) override;
 
-    // --- EL ÁRBOL DE COMPORTAMIENTO ---
     UPROPERTY(EditDefaultsOnly, Category = "AI | Logic")
-    UBehaviorTree* BehaviorTreeAsset;
-
-    // --- LOS SENTIDOS DEL ENEMIGO ---
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI | Perception")
-    UAIPerceptionComponent* EnemyPerceptionComp;
+    TObjectPtr<UBehaviorTree> BehaviorTreeAsset;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI | Perception")
-    UAISenseConfig_Sight* SightConfig;
+    TObjectPtr<UAIPerceptionComponent> EnemyPerceptionComp;
 
-    // Función que se dispara cuando el enemigo VE o DEJA DE VER algo
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI | Perception")
+    TObjectPtr<UAISenseConfig_Sight> SightConfig;
+
     UFUNCTION()
     void OnTargetDetected(AActor* Actor, FAIStimulus Stimulus);
 

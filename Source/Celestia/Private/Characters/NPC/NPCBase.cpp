@@ -1,26 +1,22 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "Characters/NPC/NPCBase.h"
 #include "Quests/QuestComponent.h"
 #include "UI/UINPCDialogue.h"
 #include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
-#include "Quests/QuestComponent.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Components/CapsuleComponent.h"
 
 ANPCBase::ANPCBase()
 {
+	PrimaryActorTick.bCanEverTick = false;
+	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+	bReplicates = true;
 
 	QuestIndicatorIcon = CreateDefaultSubobject<UBillboardComponent>(TEXT("QuestIndicatorIcon"));
 	QuestIndicatorIcon->SetupAttachment(RootComponent);
-
-	QuestIndicatorIcon->SetRelativeLocation(FVector(0.f, 0.f, 130.f)); 
-	QuestIndicatorIcon->SetRelativeScale3D(FVector(2.0f, 2.0f, 2.0f)); 
-
-
-	QuestIndicatorIcon->bHiddenInGame = true; 
+	QuestIndicatorIcon->SetRelativeLocation(FVector(0.f, 0.f, 130.f));
+	QuestIndicatorIcon->SetRelativeScale3D(FVector(2.0f, 2.0f, 2.0f));
+	QuestIndicatorIcon->bHiddenInGame = true;
 
 	static ConstructorHelpers::FObjectFinder<UTexture2D> DefaultIcon(TEXT("/Engine/EditorMaterials/TargetIcon"));
 	if (DefaultIcon.Succeeded())
@@ -28,21 +24,19 @@ ANPCBase::ANPCBase()
 		QuestIndicatorIcon->SetSprite(DefaultIcon.Object);
 	}
 
-	PrimaryActorTick.bCanEverTick = false;
-
-	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
-
 	if (GetCapsuleComponent())
 	{
 		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	}
 }
+
 void ANPCBase::BeginPlay()
 {
 	Super::BeginPlay();
 
 	GetWorldTimerManager().SetTimer(QuestIndicatorTimerHandle, this, &ANPCBase::CheckQuestStatus, 1.0f, true);
 }
+
 void ANPCBase::Interact_Implementation(AActor* Interactor)
 {
 	if (!Interactor || !DialogueWidgetClass) return;
@@ -92,6 +86,7 @@ void ANPCBase::ProcessQuestInteraction(AActor* Interactor)
 		}
 	}
 }
+
 void ANPCBase::UpdateQuestIndicator(UQuestComponent* PlayerQuestComp)
 {
 	if (!QuestIndicatorIcon || !PlayerQuestComp) return;
@@ -154,6 +149,7 @@ void ANPCBase::UpdateQuestIndicator(UQuestComponent* PlayerQuestComp)
 		QuestIndicatorIcon->SetHiddenInGame(true);
 	}
 }
+
 void ANPCBase::CheckQuestStatus()
 {
 	if (APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(this, 0))

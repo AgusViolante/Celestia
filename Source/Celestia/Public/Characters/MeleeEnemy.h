@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -7,6 +5,7 @@
 #include "MeleeEnemy.generated.h"
 
 class USphereComponent;
+class UAnimMontage;
 
 UCLASS()
 class CELESTIA_API AMeleeEnemy : public AEnemyBase
@@ -20,10 +19,10 @@ public:
 	void ExecuteMeleeHit();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
-	USphereComponent* DamageSphere;
+	TObjectPtr<USphereComponent> DamageSphere;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat | Animation")
-	UAnimMontage* AttackMontage;
+	TObjectPtr<UAnimMontage> AttackMontage;
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void StartDamage(AActor* TargetActor);
@@ -44,10 +43,13 @@ protected:
 	UFUNCTION()
 	void OnHitPlayerEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multicast_PlayAttackMontage();
+
 private:
 	void ApplyDamage();
 
 	UPROPERTY()
-	AActor* DamageTarget = nullptr;
+	TObjectPtr<AActor> DamageTarget;
 	FTimerHandle DamageTimerHandle;
 };

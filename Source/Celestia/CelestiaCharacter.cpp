@@ -224,15 +224,18 @@ void ACelestiaCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &ACelestiaCharacter::OnInteractInput);
 
-		if (DashComponent && DashComponent->DashInputAction)
+		if (IA_Dash)
 		{
-			DashComponent->RegisterMappingContext();
-			DashComponent->BindInput(EnhancedInputComponent);
+			EnhancedInputComponent->BindAction(IA_Dash, ETriggerEvent::Started, this, &ACelestiaCharacter::DoDash);
 		}
 	}
 	else
 	{
 		UE_LOG(LogTemplateCharacter, Error, TEXT("'%s' Failed to find an Enhanced Input component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
+	}
+	if (UQuestComponent* QuestComp = FindComponentByClass<UQuestComponent>())
+	{
+		QuestComp->ClientInitializeQuests();
 	}
 }
 
@@ -389,6 +392,14 @@ void ACelestiaCharacter::StopSprinting()
 	if (!HasAuthority())
 	{
 		Server_SetSprinting(false);
+	}
+}
+
+void ACelestiaCharacter::DoDash()
+{
+	if (DashComponent)
+	{
+		DashComponent->TriggerDash();
 	}
 }
 
@@ -668,11 +679,6 @@ void ACelestiaCharacter::DrownTick()
 	if (HealthComponent && !HealthComponent->IsDead())
 	{
 		HealthComponent->TakeDamage(DrownDamagePerTick);
-
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 1.5f, FColor::Red, TEXT("*Glup glup... Daño por ahogo*"));
-		}
 	}
 	else
 	{

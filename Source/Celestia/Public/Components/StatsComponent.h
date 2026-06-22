@@ -1,4 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
 #pragma once
 
 #include "CoreMinimal.h"
@@ -58,23 +57,28 @@ class CELESTIA_API UStatsComponent : public UActorComponent
 public:
 	UStatsComponent();
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 protected:
 	virtual void BeginPlay() override;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats | Primary")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_PrimaryStats, Category = "Stats | Primary")
 	FRPGStat Strength;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats | Primary")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_PrimaryStats, Category = "Stats | Primary")
 	FRPGStat Dexterity;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats | Primary")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_PrimaryStats, Category = "Stats | Primary")
 	FRPGStat Intelligence;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats | Primary")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_PrimaryStats, Category = "Stats | Primary")
 	FRPGStat Wisdom;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats | Primary")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_PrimaryStats, Category = "Stats | Primary")
 	FRPGStat Endurance;
+
+	UFUNCTION()
+	void OnRep_PrimaryStats();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats | Secondary")
 	FRPGStat MaxHealth;
@@ -106,8 +110,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats | Secondary")
 	FRPGStat MaxStamina;
 
-	
-
 public:
 	UPROPERTY(BlueprintAssignable, Category = "Stats | Events")
 	FOnMaxManaCalculatedSignature OnMaxManaCalculated;
@@ -120,6 +122,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Stats | Events")
 	FOnMaxStaminaCalculatedSignature OnMaxStaminaCalculated;
+
+	UPROPERTY(BlueprintAssignable, Category = "Stats | Events")
+	FOnStatPointsChangedSignature OnStatPointsChanged;
 
 	UFUNCTION(BlueprintCallable, Category = "Stats | Logic")
 	void RecalculateDerivedStats();
@@ -136,15 +141,18 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Stats | Logic")
 	void SetPrimaryStats(float NewStr, float NewDex, float NewInt, float NewWis, float NewEnd);
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats | Progression")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_AvailableStatPoints, Category = "Stats | Progression")
 	int32 AvailableStatPoints = 0;
 
-	UPROPERTY(BlueprintAssignable, Category = "Stats | Events")
-	FOnStatPointsChangedSignature OnStatPointsChanged;
+	UFUNCTION()
+	void OnRep_AvailableStatPoints();
 
 	UFUNCTION(BlueprintCallable, Category = "Stats | Progression")
 	bool AllocateStatPoint(ERPGStatType StatType);
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats | Progression")
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_AllocateStatPoint(ERPGStatType StatType);
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated, Category = "Stats | Progression")
 	int32 CharacterLevel = 1;
 };

@@ -1,6 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "ItemBase/ItemBase.h"
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -8,7 +5,6 @@
 AItemBase::AItemBase()
 {
 	PrimaryActorTick.bCanEverTick = false;
-
 	bReplicates = true;
 	SetReplicateMovement(true);
 
@@ -23,18 +19,13 @@ AItemBase::AItemBase()
 
 void AItemBase::Interact_Implementation(AActor* Interactor)
 {
-	if (!HasAuthority()) return;
+	if (!HasAuthority() || bIsPickedUp) return;
 
-	if (bIsPickedUp) return;
 	bIsPickedUp = true;
 
 	if (Interactor && Interactor->GetClass()->ImplementsInterface(UI_PickUp::StaticClass()))
 	{
 		II_PickUp::Execute_ReceiveItem(Interactor, Amount, ItemName);
-
 		Destroy();
 	}
 }
-
-
-

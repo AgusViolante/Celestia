@@ -1,6 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "AI/Tasks/BTDecorator_DistanceCheck.h"
 #include "AIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
@@ -21,6 +18,5 @@ bool UBTDecorator_DistanceCheck::CalculateRawConditionValue(UBehaviorTreeCompone
 	if (!Target) return false;
 
 	float Distance = FVector::Dist(AICon->GetPawn()->GetActorLocation(), Target->GetActorLocation());
-
 	return bCheckGreater ? (Distance > DistanceThreshold) : (Distance < DistanceThreshold);
 }

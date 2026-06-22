@@ -1,9 +1,7 @@
-
-
 #pragma once
 
 #include "CoreMinimal.h"
-#include "EnemyTypes.generated.h" 
+#include "EnemyTypes.generated.h"
 
 UENUM(BlueprintType)
 enum class EEnemyClassType : uint8

@@ -7,19 +7,14 @@
 UINTERFACE(MinimalAPI)
 class UDeathInterface : public UInterface
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 };
 
-/**
- * Interfaz para objetos que pueden morir.
- * Usamos BlueprintNativeEvent para permitir implementación nativa en C++.
- */
-class IDeathInterface
+class CELESTIA_API IDeathInterface
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
 public:
-    // Genera IDeathInterface::Execute_Die(...) automáticamente.
-    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Death")
-    void Die();
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Combat")
+	void Die();
 };

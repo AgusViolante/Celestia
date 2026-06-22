@@ -1,6 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "Characters/EnemyBase.h"
 #include "Components/HealthComponent.h"
 #include "Components/StatsComponent.h"
@@ -16,11 +13,16 @@
 #include "BrainComponent.h"
 #include "Quests/QuestComponent.h"
 #include "Engine/Engine.h"
+#include "Net/UnrealNetwork.h"
+#include "Engine/TargetPoint.h"
+#include "EngineUtils.h"
+#include "../../CelestiaCharacter.h" 
 
 AEnemyBase::AEnemyBase()
 {
 	PrimaryActorTick.bCanEverTick = false;
 	bUseControllerRotationYaw = false;
+	bReplicates = true;
 
 	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
 	{
@@ -37,57 +39,77 @@ AEnemyBase::AEnemyBase()
 	EnemyType = EEnemyClassType::Melee;
 }
 
+void AEnemyBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AEnemyBase, bAlreadyDied);
+	DOREPLIFETIME(AEnemyBase, bIsStunned);
+}
+
 void AEnemyBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	InitializeEnemyStats();
+	if (HasAuthority())
+	{
+		InitializeEnemyStats();
+	}
 
-	if (UCapsuleComponent* Capsule = GetCapsuleComponent())
-	{
-		Capsule->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-		Capsule->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
-		Capsule->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
-		
-	}
-	if (GetMesh())
-	{
-		GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
-	}
 
 	if (HealthComponent)
 	{
-		HealthComponent->OnDeath.AddDynamic(this, &AEnemyBase::OnHealthComponentDeath);
+		HealthComponent->OnDeath.AddUniqueDynamic(this, &AEnemyBase::OnHealthComponentDeath);
 	}
+}
 
+AActor* AEnemyBase::GetAITarget() const
+{
+	if (AAIController* AIC = Cast<AAIController>(GetController()))
+	{
+		if (UBlackboardComponent* BB = AIC->GetBlackboardComponent())
+		{
+			return Cast<AActor>(BB->GetValueAsObject(FName("TargetActor")));
+		}
+	}
+	return nullptr;
 }
 
 float AEnemyBase::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
 {
-	
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
-
-	if (bAlreadyDied || ActualDamage <= 0.0f)
+	if (!HasAuthority() || bAlreadyDied || ActualDamage <= 0.0f)
 	{
 		return 0.0f;
 	}
-	if (AEnemyAIController* AICon = Cast<AEnemyAIController>(GetController()))
+
+	AActor* TrueAttacker = nullptr;
+	if (EventInstigator && EventInstigator->GetPawn())
 	{
-		
-		if (EventInstigator && EventInstigator->GetPawn())
+		TrueAttacker = EventInstigator->GetPawn();
+	}
+	else if (DamageCauser)
+	{
+		if (DamageCauser->IsA(APawn::StaticClass()))
 		{
-			AICon->ReceiveDamageAggro(EventInstigator->GetPawn());
+			TrueAttacker = DamageCauser;
 		}
-		else if (ACharacter* CauserChar = Cast<ACharacter>(DamageCauser))
+		else if (APawn* InstPawn = DamageCauser->GetInstigator())
 		{
-			AICon->ReceiveDamageAggro(CauserChar);
-		}
-		else if (ACharacter* PlayerChar = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0))
-		{
-			AICon->ReceiveDamageAggro(PlayerChar);
+			TrueAttacker = InstPawn;
 		}
 	}
+
+	if (TrueAttacker)
+	{
+		LastAttacker = TrueAttacker;
+		if (AEnemyAIController* AICon = Cast<AEnemyAIController>(GetController()))
+		{
+			AICon->ReceiveDamageAggro(TrueAttacker);
+		}
+	}
+
 	if (HealthComponent)
 	{
 		HealthComponent->TakeDamage(ActualDamage);
@@ -98,47 +120,51 @@ float AEnemyBase::TakeDamage(float DamageAmount, struct FDamageEvent const& Dama
 
 void AEnemyBase::OnHealthComponentDeath(AActor* DeadOwner)
 {
-	Die_Implementation();
-	OnDeath.Broadcast(this);
+	if (HasAuthority())
+	{
+		Die_Implementation();
+		OnDeath.Broadcast(this);
+	}
 }
-
 
 void AEnemyBase::Die_Implementation()
 {
-	if (bAlreadyDied) return;
-	bAlreadyDied = true;
+	if (bAlreadyDied || !HasAuthority()) return;
 
+	bAlreadyDied = true;
+	OnRep_AlreadyDied();
+	for (TActorIterator<ACelestiaCharacter> It(GetWorld()); It; ++It)
+	{
+		ACelestiaCharacter* Player = *It;
+		if (Player)
+		{
+			if (UProgressionComponent* PlayerProg = Player->FindComponentByClass<UProgressionComponent>())
+			{
+				PlayerProg->AddXP(CalculateXPReward());
+			}
+			if (UQuestComponent* QuestComp = Player->FindComponentByClass<UQuestComponent>())
+			{
+				QuestComp->UpdateObjective(EObjectiveType::Kill, EnemyQuestID, nullptr, 1);
+			}
+		}
+	}
+
+	SpawnPotionDrop();
+}
+
+void AEnemyBase::OnRep_AlreadyDied()
+{
 	GetWorldTimerManager().ClearTimer(StunTimerHandle);
 
 	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
 	{
 		MoveComp->DisableMovement();
+		MoveComp->StopMovementImmediately();
 	}
 
 	if (AController* Con = GetController())
 	{
 		Con->UnPossess();
-	}
-
-	if (ACharacter* PlayerChar = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0))
-	{
-		if (UProgressionComponent* PlayerProg = PlayerChar->FindComponentByClass<UProgressionComponent>())
-		{
-			float XPToGive = CalculateXPReward();
-			PlayerProg->AddXP(XPToGive);
-
-			//Mostrar en pantalla cuanta xp ganaste
-			if (GEngine)
-			{
-				GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Cyan, FString::Printf(TEXT("+%.0f XP"), XPToGive));
-			}
-		}
-		if (UQuestComponent* QuestComp = PlayerChar->FindComponentByClass<UQuestComponent>())
-		{
-			// Le avisamos al QuestComponent que matamos a este enemigo.
-			// Pasamos el tipo (Kill), el ID del enemigo ("Slime"), nullptr porque no es un item, y la cantidad (1).
-			QuestComp->UpdateObjective(EObjectiveType::Kill, EnemyQuestID, nullptr, 1);
-		}
 	}
 
 	float MontageLength = 1.0f;
@@ -153,21 +179,27 @@ void AEnemyBase::Die_Implementation()
 	{
 		GetMesh()->SetCollisionResponseToAllChannels(ECR_Ignore);
 	}
+	if (UCapsuleComponent* Capsule = GetCapsuleComponent())
+	{
+		Capsule->SetCollisionResponseToAllChannels(ECR_Ignore);
+		Capsule->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
+		Capsule->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Block);
+	}
 
-	SetLifeSpan(MontageLength);
-	SpawnPotionDrop();
+	SetLifeSpan(MontageLength + 1.0f);
 }
 
 void AEnemyBase::SpawnPotionDrop()
 {
+	if (!HasAuthority() || FMath::RandRange(0.0f, 1.0f) > DropChance) return;
+
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
 	SpawnParams.Instigator = GetInstigator();
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
 	FVector SpawnLocation = GetActorLocation() + FVector(0.f, 0.f, -30.f);
-	AActor* SpawnedPotion = GetWorld()->SpawnActor<AActor>(PotionDropClass, SpawnLocation, FRotator::ZeroRotator, SpawnParams);
-
+	GetWorld()->SpawnActor<AActor>(PotionDropClass, SpawnLocation, FRotator::ZeroRotator, SpawnParams);
 }
 
 float AEnemyBase::CalculateXPReward() const
@@ -176,22 +208,12 @@ float AEnemyBase::CalculateXPReward() const
 
 	switch (EnemyType)
 	{
-	case EEnemyClassType::Melee:
-		TypeMultiplier = 1.0f; // Multiplicador normal
-		break;
-	case EEnemyClassType::Ranged:
-		TypeMultiplier = 1.2f; // Los de rango dan un 20% más por ser molestos
-		break;
-	case EEnemyClassType::Boss:
-		TypeMultiplier = 5.0f; // Los jefes dan muchísima más XP
-		break;
-	case EEnemyClassType::Tank:
-		TypeMultiplier = 1.5f; // Dan un 50% más de XP 
-		break;
-
+	case EEnemyClassType::Melee: TypeMultiplier = 1.0f; break;
+	case EEnemyClassType::Ranged: TypeMultiplier = 1.2f; break;
+	case EEnemyClassType::Boss: TypeMultiplier = 5.0f; break;
+	case EEnemyClassType::Tank: TypeMultiplier = 1.5f; break;
 	}
 
-	// Formula: XP Base * Nivel del Enemigo * Multiplicador de Tipo
 	return BaseXPReward * EnemyLevel * TypeMultiplier;
 }
 
@@ -200,33 +222,23 @@ void AEnemyBase::InitializeEnemyStats()
 	if (!StatsComponent) return;
 
 	float BaseStr = 1.0f, BaseDex = 1.0f, BaseInt = 1.0f, BaseWis = 1.0f, BaseEnd = 1.0f;
-
-
 	float StrGrowth = 0.5f, DexGrowth = 0.5f, IntGrowth = 0.5f, WisGrowth = 0.5f, EndGrowth = 0.5f;
 
 	switch (EnemyType)
 	{
 	case EEnemyClassType::Melee:
-		
 		BaseStr = 2.0f; BaseEnd = 4.0f; BaseDex = 1.0f;
 		StrGrowth = 1.0f; EndGrowth = 1.5f; DexGrowth = 0.5f;
 		break;
 	case EEnemyClassType::Ranged:
-		
 		BaseDex = 3.0f; BaseInt = 2.0f; BaseEnd = 2.0f;
 		DexGrowth = 1.0f; IntGrowth = 1.0f; EndGrowth = 0.5f;
 		break;
 	case EEnemyClassType::Boss:
-		BaseStr = 10.0f;
-		BaseEnd = 30.0f;
-		BaseDex = 3.0f; BaseInt = 3.0f; BaseWis = 3.0f;
-
-		StrGrowth = 2.0f;
-		EndGrowth = 5.0f;
-		DexGrowth = 1.0f; IntGrowth = 1.0f; WisGrowth = 1.0f;
+		BaseStr = 10.0f; BaseEnd = 30.0f; BaseDex = 3.0f; BaseInt = 3.0f; BaseWis = 3.0f;
+		StrGrowth = 2.0f; EndGrowth = 5.0f; DexGrowth = 1.0f; IntGrowth = 1.0f; WisGrowth = 1.0f;
 		break;
 	case EEnemyClassType::Tank:
-	
 		BaseStr = 3.0f; BaseEnd = 8.0f; BaseDex = 1.0f; BaseInt = 1.0f; BaseWis = 2.0f;
 		StrGrowth = 1.5f; EndGrowth = 2.5f; DexGrowth = 0.2f; IntGrowth = 0.2f; WisGrowth = 0.5f;
 		break;
@@ -245,22 +257,16 @@ void AEnemyBase::InitializeEnemyStats()
 	if (HealthComponent)
 	{
 		float NewMaxHealth = StatsComponent->GetStatValue(ERPGStatType::MaxHealth);
-		HealthComponent->MaxHealth = NewMaxHealth;
-		HealthComponent->Health = NewMaxHealth;
+		HealthComponent->UpdateMaxHealth(NewMaxHealth);
+		HealthComponent->Heal(NewMaxHealth);
 	}
 }
+
 void AEnemyBase::ApplyStun_Implementation(float Duration)
 {
-	if (bIsStunned) return;
+	if (bIsStunned || !HasAuthority()) return;
 	bIsStunned = true;
-
-	StopAnimMontage();
-
-	if (GetCharacterMovement())
-	{
-		GetCharacterMovement()->DisableMovement();
-		GetCharacterMovement()->StopMovementImmediately();
-	}
+	OnRep_IsStunned();
 
 	if (AAIController* AIC = Cast<AAIController>(GetController()))
 	{
@@ -270,33 +276,61 @@ void AEnemyBase::ApplyStun_Implementation(float Duration)
 		}
 	}
 
-	if (GetMesh())
-	{
-		GetMesh()->bPauseAnims = true;
-	}
-
-	if (StunVFX)
-	{
-		ActiveStunVFX = UNiagaraFunctionLibrary::SpawnSystemAttached(
-			StunVFX, GetMesh(), NAME_None,
-			FVector(0.f, 0.f, StunVFXHeightOffset), FRotator::ZeroRotator,
-			EAttachLocation::KeepRelativeOffset, true
-		);
-	}
-
 	GetWorldTimerManager().SetTimer(StunTimerHandle, this, &AEnemyBase::ReleaseStun, Duration, false);
+}
+
+void AEnemyBase::OnRep_IsStunned()
+{
+	if (bIsStunned)
+	{
+		StopAnimMontage();
+
+		if (GetCharacterMovement())
+		{
+			GetCharacterMovement()->DisableMovement();
+			GetCharacterMovement()->StopMovementImmediately();
+		}
+
+		if (GetMesh())
+		{
+			GetMesh()->bPauseAnims = true;
+		}
+
+		if (StunVFX)
+		{
+			ActiveStunVFX = UNiagaraFunctionLibrary::SpawnSystemAttached(
+				StunVFX, GetMesh(), NAME_None,
+				FVector(0.f, 0.f, StunVFXHeightOffset), FRotator::ZeroRotator,
+				EAttachLocation::KeepRelativeOffset, true
+			);
+		}
+	}
+	else
+	{
+		if (GetCharacterMovement())
+		{
+			GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+		}
+
+		if (GetMesh())
+		{
+			GetMesh()->bPauseAnims = false;
+		}
+
+		if (IsValid(ActiveStunVFX))
+		{
+			ActiveStunVFX->DestroyComponent();
+		}
+		ActiveStunVFX = nullptr;
+	}
 }
 
 void AEnemyBase::ReleaseStun()
 {
-	if (bAlreadyDied) return;
+	if (bAlreadyDied || !HasAuthority()) return;
 
 	bIsStunned = false;
-
-	if (GetCharacterMovement())
-	{
-		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
-	}
+	OnRep_IsStunned();
 
 	if (AAIController* AIC = Cast<AAIController>(GetController()))
 	{
@@ -305,30 +339,12 @@ void AEnemyBase::ReleaseStun()
 			BrainComp->ResumeLogic("Stunned");
 		}
 
-		ACharacter* PlayerChar = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
-		if (PlayerChar)
+		if (LastAttacker)
 		{
 			if (UBlackboardComponent* BB = AIC->GetBlackboardComponent())
 			{
-				BB->ClearValue(TEXT("TargetActor"));
-				BB->SetValueAsObject(TEXT("TargetActor"), PlayerChar);
-			}
-
-			if (AEnemyAIController* MyAIC = Cast<AEnemyAIController>(AIC))
-			{
-				MyAIC->ReceiveDamageAggro(PlayerChar);
+				BB->SetValueAsObject(TEXT("TargetActor"), LastAttacker);
 			}
 		}
 	}
-
-	if (GetMesh())
-	{
-		GetMesh()->bPauseAnims = false;
-	}
-
-	if (IsValid(ActiveStunVFX))
-	{
-		ActiveStunVFX->DestroyComponent();
-	}
-	ActiveStunVFX = nullptr;
 }

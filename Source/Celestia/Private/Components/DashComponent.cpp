@@ -1,20 +1,13 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #include "Components/DashComponent.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "EnhancedInputComponent.h"
-#include "EnhancedInputSubsystems.h"
 #include "TimerManager.h"
-#include "Engine/LocalPlayer.h"
-#include "GameFramework/PlayerController.h"
-#include "Engine/Engine.h"
+#include "Engine/World.h"
 
 UDashComponent::UDashComponent()
 {
     PrimaryComponentTick.bCanEverTick = false;
     bCanDash = true;
-    bIsBound = false;
     bFrictionSaved = false;
 
     SetIsReplicatedByDefault(true);
@@ -25,82 +18,43 @@ void UDashComponent::BeginPlay()
     Super::BeginPlay();
 }
 
-void UDashComponent::BindInput(UEnhancedInputComponent* EnhancedInputComponent)
-{
-  
-    if (bIsBound) return;
-
-    EnhancedInputComponent->BindAction(DashInputAction, ETriggerEvent::Started, this, &UDashComponent::OnDashInput);
-    bIsBound = true;
-}
-
-void UDashComponent::RegisterMappingContext()
-{
-    AActor* Owner = GetOwner();
-    if (!Owner) return;
-
-    ACharacter* Char = Cast<ACharacter>(Owner);
-    if (!Char) return;
-
-    APlayerController* PC = Cast<APlayerController>(Char->GetController());
-    if (!PC) return;
-
-    ULocalPlayer* LP = PC->GetLocalPlayer();
-    if (!LP) return;
-
-    if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(LP))
-    {
-        if (MappingContext)
-        {
-            const int32 Priority = 0;
-            Subsystem->AddMappingContext(MappingContext, Priority);
-        }
-    }
-}
-
-void UDashComponent::OnDashInput(const FInputActionInstance& Instance)
-{
-    TriggerDash();
-}
-
 void UDashComponent::TriggerDash()
 {
-
     if (!bCanDash) return;
 
     ACharacter* OwnerChar = Cast<ACharacter>(GetOwner());
     if (!OwnerChar) return;
 
-    if (OwnerChar->IsLocallyControlled() || OwnerChar->HasAuthority())
+    if (OwnerChar->HasAuthority())
     {
         ExecuteDashPhysics();
+        Multicast_DashVisuals();
     }
-
-    if (!OwnerChar->HasAuthority() && OwnerChar->IsLocallyControlled())
+    else if (OwnerChar->IsLocallyControlled())
     {
+        ExecuteDashPhysics();
         Server_TriggerDash();
     }
 }
 
 bool UDashComponent::Server_TriggerDash_Validate()
 {
-    return true; 
+    return true;
 }
 
 void UDashComponent::Server_TriggerDash_Implementation()
 {
-    ExecuteDashPhysics();
+    if (!bCanDash) return;
 
+    ExecuteDashPhysics();
     Multicast_DashVisuals();
 }
 
 void UDashComponent::Multicast_DashVisuals_Implementation()
 {
-    ACharacter* OwnerChar = Cast<ACharacter>(GetOwner());
-    if (!OwnerChar) return;
 
-   
 }
+
 void UDashComponent::ExecuteDashPhysics()
 {
     ACharacter* OwnerChar = Cast<ACharacter>(GetOwner());
@@ -147,6 +101,7 @@ void UDashComponent::ExecuteDashPhysics()
     }
 
     bCanDash = false;
+
     if (GetWorld())
     {
         const float Interval = FMath::Max(0.001f, DashCooldown);
@@ -173,6 +128,5 @@ void UDashComponent::RestoreFriction()
         MoveComp->BrakingFrictionFactor = SavedBrakingFriction;
         MoveComp->GroundFriction = SavedGroundFriction;
         bFrictionSaved = false;
-
     }
 }

@@ -1,6 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "Characters/RangedEnemy/RangedEnemy.h"
 #include "Components/StatsComponent.h"
 #include "Characters/RangedEnemy/MagicProjectile.h"
@@ -14,16 +11,21 @@
 ARangedEnemy::ARangedEnemy()
 {
 	EnemyType = EEnemyClassType::Ranged;
-
 	bUseControllerRotationYaw = true;
-
-	GetCharacterMovement()->bOrientRotationToMovement = false;
+	if (GetCharacterMovement())
+	{
+		GetCharacterMovement()->bOrientRotationToMovement = false;
+	}
 }
 
 void ARangedEnemy::PerformRangedAttack()
 {
-	if (bAlreadyDied) return;
+	if (bAlreadyDied || !HasAuthority()) return;
+	Multicast_PlayRangedMontage();
+}
 
+void ARangedEnemy::Multicast_PlayRangedMontage_Implementation()
+{
 	UAnimInstance* AnimInst = (GetMesh() ? GetMesh()->GetAnimInstance() : nullptr);
 	if (AttackMontage && AnimInst)
 	{
@@ -33,17 +35,18 @@ void ARangedEnemy::PerformRangedAttack()
 
 void ARangedEnemy::FireMagic()
 {
-	if (!ProjectileClass || bAlreadyDied) return;
+	if (!HasAuthority() || !ProjectileClass || bAlreadyDied) return;
 
 	FVector ForwardOffset = GetActorForwardVector() * 100.f;
 	FVector SpawnLocation = GetMesh()->GetSocketLocation(MuzzleSocketName) + ForwardOffset;
-
 	FRotator SpawnRotation = GetActorRotation();
 
-	ACharacter* PlayerChar = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
-	if (PlayerChar)
+	AActor* Target = GetAITarget();
+	if (!Target) Target = LastAttacker;
+
+	if (Target)
 	{
-		FVector TargetLocation = PlayerChar->GetActorLocation();
+		FVector TargetLocation = Target->GetActorLocation();
 		SpawnRotation = UKismetMathLibrary::FindLookAtRotation(SpawnLocation, TargetLocation);
 	}
 
@@ -60,24 +63,13 @@ void ARangedEnemy::FireMagic()
 
 		if (StatsComponent)
 		{
-		
 			float FinalMagicDamage = StatsComponent->GetStatValue(ERPGStatType::MagicAttack);
-
-		
 			float CritChance = StatsComponent->GetStatValue(ERPGStatType::MagicCrit);
-			float RandomRoll = FMath::RandRange(0.0f, 100.0f);
 
-			if (RandomRoll <= CritChance)
+			if (FMath::RandRange(0.0f, 100.0f) <= CritChance)
 			{
-				FinalMagicDamage *= 1.5f; 
-
-				if (GEngine)
-				{
-					GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Purple, TEXT("¡El Enemigo lanzó un HECHIZO CRÍTICO!"));
-				}
+				FinalMagicDamage *= 1.5f;
 			}
-
-			
 			SpawnedProj->DamageAmount = FinalMagicDamage;
 		}
 	}

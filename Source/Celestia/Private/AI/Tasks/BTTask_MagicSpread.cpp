@@ -9,23 +9,13 @@ UBTTask_MagicSpread::UBTTask_MagicSpread()
 
 EBTNodeResult::Type UBTTask_MagicSpread::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
-	AAIController* AIController = OwnerComp.GetAIOwner();
-	if (!AIController)
+	if (AAIController* AIController = OwnerComp.GetAIOwner())
 	{
-		return EBTNodeResult::Failed;
+		if (ABossEnemy* BossEnemy = Cast<ABossEnemy>(AIController->GetPawn()))
+		{
+			BossEnemy->FireMagicSpread();
+			return EBTNodeResult::Succeeded;
+		}
 	}
-
-	APawn* ControlledPawn = AIController->GetPawn();
-	if (!ControlledPawn)
-	{
-		return EBTNodeResult::Failed;
-	}
-
-	if (ABossEnemy* BossEnemy = Cast<ABossEnemy>(ControlledPawn))
-	{
-		BossEnemy->FireMagicSpread();
-		return EBTNodeResult::Succeeded;
-	}
-
 	return EBTNodeResult::Failed;
 }

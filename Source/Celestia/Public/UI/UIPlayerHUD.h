@@ -2,8 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "Components/StatsComponent.h"
-#include "Components/VerticalBox.h"
+#include "Quests/QuestComponent.h"
 #include "UIPlayerHUD.generated.h"
 
 class UProgressBar;
@@ -11,7 +10,8 @@ class UTextBlock;
 class UHealthComponent;
 class UStaminaComponent;
 class UNiagaraSystem;
-class UQuestComponent;
+class UWidgetAnimation;
+class UWidget;
 
 UCLASS()
 class CELESTIA_API UUIPlayerHUD : public UUserWidget
@@ -19,33 +19,30 @@ class CELESTIA_API UUIPlayerHUD : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	// --- BARRAS Y RECURSOS ---
 	UPROPERTY(meta = (BindWidget))
-	UProgressBar* HealthBar;
-
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* HealthText;
+	TObjectPtr<UProgressBar> HealthBar;
 
 	UPROPERTY(meta = (BindWidget))
-	UProgressBar* StaminaBar;
+	TObjectPtr<UTextBlock> HealthText;
 
 	UPROPERTY(meta = (BindWidget))
-	UProgressBar* ManaBar;
+	TObjectPtr<UProgressBar> StaminaBar;
 
 	UPROPERTY(meta = (BindWidget))
-	UTextBlock* ManaText;
+	TObjectPtr<UProgressBar> ManaBar;
 
 	UPROPERTY(meta = (BindWidget))
-	UProgressBar* XP_ProgressBar;
+	TObjectPtr<UTextBlock> ManaText;
 
 	UPROPERTY(meta = (BindWidget))
-	UTextBlock* Level_Text;
+	TObjectPtr<UProgressBar> XP_ProgressBar;
 
 	UPROPERTY(meta = (BindWidget))
-	UTextBlock* XP_Text;
+	TObjectPtr<UTextBlock> Level_Text;
 
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UTextBlock> XP_Text;
 
-	// --- FUNCIONES DE ACTUALIZACIÓN ---
 	UFUNCTION()
 	void UpdateHealth(UHealthComponent* HealthComp, float CurrentHealth, float MaxHealth, float HealthDelta);
 
@@ -61,12 +58,11 @@ public:
 	UFUNCTION()
 	void UpdateLevel(int32 NewLevel);
 
-	// --- QUEST TRACKER ---
 	UPROPERTY(meta = (BindWidgetOptional))
-	UTextBlock* Txt_TrackedQuestName;
+	TObjectPtr<UTextBlock> Txt_TrackedQuestName;
 
 	UPROPERTY(meta = (BindWidgetOptional))
-	UVerticalBox* QuestObjectivesContainer;
+	TObjectPtr<class UVerticalBox> QuestObjectivesContainer;
 
 	UFUNCTION(BlueprintCallable, Category = "Quests | UI")
 	void UpdateTrackedQuest(const FActiveQuest& TrackedQuest);
@@ -74,15 +70,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Quests | UI")
 	void ClearTrackedQuest();
 
+	UPROPERTY(meta = (BindWidgetOptional))
+	TObjectPtr<UProgressBar> BossHealthBar;
 
 	UPROPERTY(meta = (BindWidgetOptional))
-	class UProgressBar* BossHealthBar;
+	TObjectPtr<UTextBlock> BossNameText;
 
 	UPROPERTY(meta = (BindWidgetOptional))
-	class UTextBlock* BossNameText;
-
-	UPROPERTY(meta = (BindWidgetOptional))
-	class UWidget* BossUIContainer;
+	TObjectPtr<UWidget> BossUIContainer;
 
 	UFUNCTION(BlueprintCallable, Category = "UI | Boss")
 	void ShowBossUI(const FString& BossName, float CurrentHealth, float MaxHealth);
@@ -94,15 +89,15 @@ public:
 	void HideBossUI();
 
 	UPROPERTY(Transient, meta = (BindWidgetAnim))
-	class UWidgetAnimation* BossFadeInAnim;
+	TObjectPtr<UWidgetAnimation> BossFadeInAnim;
 
 	UFUNCTION()
 	void ShowNewQuestNotification(const FActiveQuest& AcceptedQuest);
 
 protected:
 	UPROPERTY(Transient, meta = (BindWidgetAnimOptional))
-	class UWidgetAnimation* Anim_NewQuest;
+	TObjectPtr<UWidgetAnimation> Anim_NewQuest;
 
 	UPROPERTY(meta = (BindWidgetOptional))
-	class UTextBlock* Txt_NewQuestName;
+	TObjectPtr<UTextBlock> Txt_NewQuestName;
 };

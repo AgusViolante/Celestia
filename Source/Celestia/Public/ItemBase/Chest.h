@@ -5,7 +5,6 @@
 #include "Interfaces/I_PickUp.h" 
 #include "Chest.generated.h"
 
-
 class UBoxComponent;
 class USkeletalMeshComponent;
 class USoundBase;
@@ -31,6 +30,8 @@ public:
 	AChest();
 
 protected:
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Chest | Components")
 	TObjectPtr<UBoxComponent> BoxCollision;
 
@@ -61,8 +62,6 @@ protected:
 	void Multicast_OnChestOpened();
 
 	void DestroyChest();
-
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Chest | Audio")
 	TObjectPtr<USoundBase> OpenSound;

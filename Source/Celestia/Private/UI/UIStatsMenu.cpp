@@ -1,6 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "UI/UIStatsMenu.h"
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
@@ -24,8 +21,25 @@ void UUIStatsMenu::NativeConstruct()
 	if (APawn* PlayerPawn = GetOwningPlayerPawn())
 	{
 		PlayerStatsComp = PlayerPawn->FindComponentByClass<UStatsComponent>();
+
+		if (PlayerStatsComp)
+		{
+			// Conectamos los delegados para que la UI se entere cuando el servidor apruebe el cambio
+			PlayerStatsComp->OnStatPointsChanged.AddUniqueDynamic(this, &UUIStatsMenu::HandleStatPointsChanged);
+			PlayerStatsComp->OnStatChanged.AddUniqueDynamic(this, &UUIStatsMenu::HandleStatChanged);
+		}
 	}
 
+	RefreshAllStats();
+}
+
+void UUIStatsMenu::HandleStatPointsChanged(int32 NewStatPoints)
+{
+	RefreshAllStats();
+}
+
+void UUIStatsMenu::HandleStatChanged(ERPGStatType StatType, float NewTotalValue)
+{
 	RefreshAllStats();
 }
 
@@ -45,17 +59,15 @@ void UUIStatsMenu::RefreshAllStats()
 	if (Btn_AddWIS) Btn_AddWIS->SetIsEnabled(bHasPoints);
 	if (Btn_AddEND) Btn_AddEND->SetIsEnabled(bHasPoints);
 
-	// --- ACTUALIZAR TEXTOS PRIMARIOS ---
 	if (Txt_STR) Txt_STR->SetText(FText::AsNumber(FMath::RoundToInt(PlayerStatsComp->GetStatValue(ERPGStatType::Strength))));
 	if (Txt_DEX) Txt_DEX->SetText(FText::AsNumber(FMath::RoundToInt(PlayerStatsComp->GetStatValue(ERPGStatType::Dexterity))));
 	if (Txt_INT) Txt_INT->SetText(FText::AsNumber(FMath::RoundToInt(PlayerStatsComp->GetStatValue(ERPGStatType::Intelligence))));
 	if (Txt_WIS) Txt_WIS->SetText(FText::AsNumber(FMath::RoundToInt(PlayerStatsComp->GetStatValue(ERPGStatType::Wisdom))));
 	if (Txt_END) Txt_END->SetText(FText::AsNumber(FMath::RoundToInt(PlayerStatsComp->GetStatValue(ERPGStatType::Endurance))));
 
-	// --- ACTUALIZAR TEXTOS SECUNDARIOS ---
 	if (Txt_MaxHealth) Txt_MaxHealth->SetText(FText::AsNumber(FMath::RoundToInt(PlayerStatsComp->GetStatValue(ERPGStatType::MaxHealth))));
 	if (Txt_MaxMana) Txt_MaxMana->SetText(FText::AsNumber(FMath::RoundToInt(PlayerStatsComp->GetStatValue(ERPGStatType::MaxMana))));
-	if (Txt_MaxStamina) Txt_MaxStamina->SetText(FText::AsNumber(FMath::RoundToInt(PlayerStatsComp->GetStatValue(ERPGStatType::MaxStamina)))); // Asegurate de que esto exista en tu Enum
+	if (Txt_MaxStamina) Txt_MaxStamina->SetText(FText::AsNumber(FMath::RoundToInt(PlayerStatsComp->GetStatValue(ERPGStatType::MaxStamina))));
 
 	if (Txt_MeleeAttack) Txt_MeleeAttack->SetText(FText::AsNumber(FMath::RoundToInt(PlayerStatsComp->GetStatValue(ERPGStatType::MeleeAttack))));
 	if (Txt_RangedAttack) Txt_RangedAttack->SetText(FText::AsNumber(FMath::RoundToInt(PlayerStatsComp->GetStatValue(ERPGStatType::RangedAttack))));
@@ -68,34 +80,27 @@ void UUIStatsMenu::RefreshAllStats()
 	if (Txt_MagicCrit) Txt_MagicCrit->SetText(FText::FromString(FString::Printf(TEXT("%.1f%%"), PlayerStatsComp->GetStatValue(ERPGStatType::MagicCrit))));
 }
 
-// --- LÓGICA DE LOS BOTONES ---
-
 void UUIStatsMenu::OnAddSTRClicked()
 {
-	if (PlayerStatsComp && PlayerStatsComp->AllocateStatPoint(ERPGStatType::Strength))
-		RefreshAllStats();
+	if (PlayerStatsComp) PlayerStatsComp->AllocateStatPoint(ERPGStatType::Strength);
 }
 
 void UUIStatsMenu::OnAddDEXClicked()
 {
-	if (PlayerStatsComp && PlayerStatsComp->AllocateStatPoint(ERPGStatType::Dexterity))
-		RefreshAllStats();
+	if (PlayerStatsComp) PlayerStatsComp->AllocateStatPoint(ERPGStatType::Dexterity);
 }
 
 void UUIStatsMenu::OnAddINTClicked()
 {
-	if (PlayerStatsComp && PlayerStatsComp->AllocateStatPoint(ERPGStatType::Intelligence))
-		RefreshAllStats();
+	if (PlayerStatsComp) PlayerStatsComp->AllocateStatPoint(ERPGStatType::Intelligence);
 }
 
 void UUIStatsMenu::OnAddWISClicked()
 {
-	if (PlayerStatsComp && PlayerStatsComp->AllocateStatPoint(ERPGStatType::Wisdom))
-		RefreshAllStats();
+	if (PlayerStatsComp) PlayerStatsComp->AllocateStatPoint(ERPGStatType::Wisdom);
 }
 
 void UUIStatsMenu::OnAddENDClicked()
 {
-	if (PlayerStatsComp && PlayerStatsComp->AllocateStatPoint(ERPGStatType::Endurance))
-		RefreshAllStats();
+	if (PlayerStatsComp) PlayerStatsComp->AllocateStatPoint(ERPGStatType::Endurance);
 }

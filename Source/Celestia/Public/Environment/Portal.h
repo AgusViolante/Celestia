@@ -1,4 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
 #pragma once
 
 #include "CoreMinimal.h"
@@ -20,7 +19,6 @@ public:
 	APortal();
 
 protected:
-
 	virtual void BeginPlay() override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Portal | Components")
@@ -46,14 +44,14 @@ protected:
 	UPROPERTY()
 	TObjectPtr<ACharacter> InteractingPlayer;
 
-	UFUNCTION(Client, Reliable)
-	void Client_StartFadeOut(ACharacter* PlayerCharacter, float Duration);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_StartFadeOut(ACharacter* PlayerCharacter, float Duration);
 
-	UFUNCTION(Client, Reliable)
-	void Client_StartFadeIn(ACharacter* PlayerCharacter, float Duration);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_StartFadeIn(ACharacter* PlayerCharacter, float Duration);
 
-	UFUNCTION(Client, Reliable)
-	void Client_ShowLockedMessage(FName DestinationID);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_ShowLockedMessage(ACharacter* PlayerCharacter, FName DestinationID);
 
 	void ExecuteTeleport();
 

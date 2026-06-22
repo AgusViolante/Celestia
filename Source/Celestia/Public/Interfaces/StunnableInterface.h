@@ -17,8 +17,6 @@ class CELESTIA_API IStunnableInterface
 	GENERATED_BODY()
 
 public:
-	
-
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Combat | Stun")
 	void ApplyStun(float Duration);
 };

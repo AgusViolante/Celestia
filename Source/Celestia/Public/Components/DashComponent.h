@@ -1,11 +1,10 @@
-// Fill out your copyright notice in the Description page of Project Settings.
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "InputAction.h"
-#include "InputMappingContext.h"
 #include "DashComponent.generated.h"
+
+class ACharacter;
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class CELESTIA_API UDashComponent : public UActorComponent
@@ -33,22 +32,6 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dash")
     float FrictionRestoreDelay = 0.12f;
 
-    // --- Input ---
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dash|Input")
-    UInputAction* DashInputAction = nullptr;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dash|Input")
-    UInputMappingContext* MappingContext = nullptr;
-
-    UFUNCTION(BlueprintCallable, Category = "Dash|Input")
-    void BindInput(class UEnhancedInputComponent* EnhancedInputComponent);
-
-    UFUNCTION(BlueprintCallable, Category = "Dash|Input")
-    void RegisterMappingContext();
-
-    UFUNCTION()
-    void OnDashInput(const FInputActionInstance& Instance);
-
     UFUNCTION(BlueprintCallable, Category = "Dash")
     void TriggerDash();
 
@@ -65,7 +48,6 @@ protected:
 
 private:
     bool bCanDash = true;
-    bool bIsBound = false;
     FTimerHandle DashCooldownTimer;
     FTimerHandle RestoreFrictionTimer;
 

@@ -1,4 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
 #pragma once
 
 #include "CoreMinimal.h"
@@ -28,73 +27,64 @@ public:
 	TArray<UQuestDataAsset*> AllGameQuests;
 
 protected:
-
 	virtual void NativeOnInitialized() override;
 
 	UPROPERTY(meta = (BindWidgetOptional))
-	UButton* Btn_TrackQuest;
+	TObjectPtr<UButton> Btn_TrackQuest;
 
 	UFUNCTION()
 	void OnTrackButtonClicked();
-	// --- CONTENEDORES ---
+
 	UPROPERTY(meta = (BindWidget))
-	UScrollBox* ActiveQuestsContainer;
+	TObjectPtr<UScrollBox> ActiveQuestsContainer;
 
 	UPROPERTY(meta = (BindWidgetOptional))
-	UScrollBox* AvailableQuestsContainer;
+	TObjectPtr<UScrollBox> AvailableQuestsContainer;
 
 	UPROPERTY(meta = (BindWidgetOptional))
-	UScrollBox* CompletedQuestsContainer;
+	TObjectPtr<UScrollBox> CompletedQuestsContainer;
 
 	UPROPERTY(meta = (BindWidget))
-	UVerticalBox* ObjectivesContainer;
+	TObjectPtr<UVerticalBox> ObjectivesContainer;
 
 	UPROPERTY(meta = (BindWidget))
-	UVerticalBox* RewardsContainer;
-
-	// --- TEXTOS PRINCIPALES ---
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* Txt_DetailName;
+	TObjectPtr<UVerticalBox> RewardsContainer;
 
 	UPROPERTY(meta = (BindWidget))
-	UTextBlock* Txt_DetailDescription;
+	TObjectPtr<UTextBlock> Txt_DetailName;
 
 	UPROPERTY(meta = (BindWidget))
-	UTextBlock* Txt_GiverNPC;
+	TObjectPtr<UTextBlock> Txt_DetailDescription;
 
 	UPROPERTY(meta = (BindWidget))
-	UTextBlock* Txt_ReceiverNPC;
+	TObjectPtr<UTextBlock> Txt_GiverNPC;
 
 	UPROPERTY(meta = (BindWidget))
-	UTextBlock* Txt_QuestStatus;
+	TObjectPtr<UTextBlock> Txt_ReceiverNPC;
 
 	UPROPERTY(meta = (BindWidget))
-	UTextBlock* Txt_QuestType;
+	TObjectPtr<UTextBlock> Txt_QuestStatus;
+
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UTextBlock> Txt_QuestType;
 
 	UFUNCTION()
 	void OnQuestSelected(const FActiveQuest& SelectedQuest);
 
-	// --- ESTILOS DE LA INTERFAZ ---
-
-	// Fuente para los Títulos (Misión y Encabezados)
 	UPROPERTY(EditDefaultsOnly, Category = "Quests | Style")
 	FSlateFontInfo TitleFont;
 
-	// Fuente para el texto general (Descripciones, Objetivos)
 	UPROPERTY(EditDefaultsOnly, Category = "Quests | Style")
 	FSlateFontInfo BodyFont;
 
-	// Color para el texto de Misión Completada
 	UPROPERTY(EditDefaultsOnly, Category = "Quests | Style")
-	FLinearColor CompletedColor = FLinearColor(0.5f, 0.5f, 0.5f, 1.0f); // Gris
+	FLinearColor CompletedColor = FLinearColor(0.5f, 0.5f, 0.5f, 1.0f);
 
-	// Color para el texto Activo/En Progreso
 	UPROPERTY(EditDefaultsOnly, Category = "Quests | Style")
 	FLinearColor ActiveColor = FLinearColor::White;
 
-	// Color de realce (Ej: para recompensas o títulos)
 	UPROPERTY(EditDefaultsOnly, Category = "Quests | Style")
-	FLinearColor AccentColor = FLinearColor(0.8f, 0.6f, 0.1f, 1.0f); // Dorado/Amarillo pálido
+	FLinearColor AccentColor = FLinearColor(0.8f, 0.6f, 0.1f, 1.0f);
 
 private:
 	void ClearDetailsUI();
@@ -102,5 +92,5 @@ private:
 	void CreateRewardRow(const FString& RewardName, int32 Quantity);
 
 	UPROPERTY()
-	UQuestDataAsset* CurrentlyViewedQuest;
+	TObjectPtr<UQuestDataAsset> CurrentlyViewedQuest;
 };

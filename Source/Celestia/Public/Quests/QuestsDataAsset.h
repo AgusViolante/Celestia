@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -8,8 +6,6 @@
 #include "Characters/EnemyBase.h"
 #include "QuestsDataAsset.generated.h"
 
-
-// Tipos de misión para clasificar en la UIPlayerHUD
 UENUM(BlueprintType)
 enum class EQuestType : uint8
 {
@@ -17,7 +13,6 @@ enum class EQuestType : uint8
 	Secondary	UMETA(DisplayName = "Misión Secundaria")
 };
 
-// Tipos de objetivos para la lógica del QuestComponent
 UENUM(BlueprintType)
 enum class EObjectiveType : uint8
 {
@@ -26,7 +21,6 @@ enum class EObjectiveType : uint8
 	Location	UMETA(DisplayName = "Alcanzar Ubicación"),
 	Dungeon		UMETA(DisplayName = "Completar Dungeon"),
 	Talk		UMETA(DisplayName = "Hablar con NPC")
-
 };
 
 USTRUCT(BlueprintType)
@@ -59,8 +53,8 @@ struct FQuestObjective
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Objective", meta = (EditCondition = "ObjectiveType == EObjectiveType::Talk"))
 	TArray<FText> DialogueLines;
-
 };
+
 USTRUCT(BlueprintType)
 struct FItemReward
 {
@@ -77,6 +71,7 @@ struct FItemReward
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Reward")
 	FText ItemDisplayName;
 };
+
 USTRUCT(BlueprintType)
 struct FQuestReward
 {
@@ -96,7 +91,6 @@ struct FQuestReward
 
 	FQuestReward() : Experience(0.f), Coins(0) {}
 };
-
 
 UCLASS(BlueprintType)
 class CELESTIA_API UQuestDataAsset : public UPrimaryDataAsset
@@ -134,7 +128,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Info")
 	FText ReceiverName;
 
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Objectives")
 	TArray<FQuestObjective> Objectives;
 
@@ -143,17 +136,19 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Info")
 	bool bIsRepeatable = false;
-	
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Info", meta = (ClampMin = "1"))
 	int32 RequiredLevel = 1;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Info")
-	UQuestDataAsset* PrerequisiteQuest;
+	TObjectPtr<UQuestDataAsset> PrerequisiteQuest;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Chain")
-	UQuestDataAsset* NextQuest;
+	TObjectPtr<UQuestDataAsset> NextQuest;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Info")
 	bool bAutoTurnIn = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest Info")
+	bool bIsGlobalCoop = false;
 };

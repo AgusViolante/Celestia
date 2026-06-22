@@ -11,7 +11,6 @@
 AChest::AChest()
 {
 	PrimaryActorTick.bCanEverTick = false;
-
 	bReplicates = true;
 
 	BoxCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("Box Collision"));
@@ -27,35 +26,30 @@ AChest::AChest()
 void AChest::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
 	DOREPLIFETIME(AChest, bIsLooted);
 }
 
 void AChest::Interact_Implementation(AActor* Interactor)
 {
-	if (!HasAuthority()) return;
-
-	if (bIsLooted) return;
+	if (!HasAuthority() || bIsLooted) return;
 
 	bIsLooted = true;
+	OnRep_IsLooted();
 
 	if (Interactor)
 	{
-		UProgressionComponent* ProgComp = Interactor->GetComponentByClass<UProgressionComponent>();
-		if (ProgComp)
+		if (UProgressionComponent* ProgComp = Interactor->GetComponentByClass<UProgressionComponent>())
 		{
 			ProgComp->AddXP(XPReward);
 		}
 
 		if (GetWorld())
 		{
-
 			for (const FLootItem& Loot : LootTable)
 			{
 				if (Loot.ItemClass && FMath::FRandRange(0.0f, 100.0f) <= Loot.DropChance)
 				{
 					FVector RandomOffset = FVector(FMath::RandRange(-60.0f, 60.0f), FMath::RandRange(-60.0f, 60.0f), 0.0f);
-
 					FVector PuntoInicio = GetActorLocation() + (GetActorForwardVector() * 100.0f) + FVector(0.0f, 0.0f, 100.0f) + RandomOffset;
 					FVector PuntoFinal = PuntoInicio - FVector(0.0f, 0.0f, 500.0f);
 
@@ -72,23 +66,20 @@ void AChest::Interact_Implementation(AActor* Interactor)
 
 					GetWorld()->SpawnActor<AActor>(Loot.ItemClass, PosicionFinalSpawn, FRotator::ZeroRotator);
 				}
-			
 			}
 		}
 
-
 		Multicast_OnChestOpened();
-
 		GetWorld()->GetTimerManager().SetTimer(DestroyTimerHandle, this, &AChest::DestroyChest, DestroyDelay, false);
 	}
 }
+
 void AChest::Multicast_OnChestOpened_Implementation()
 {
 	if (OpenSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, OpenSound, GetActorLocation());
 	}
-	OnChestOpenedVisuals();
 }
 
 void AChest::OnRep_IsLooted()

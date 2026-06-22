@@ -1,4 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
 #include "AI/EnemyAIController.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
@@ -13,22 +12,18 @@ AEnemyAIController::AEnemyAIController()
 {
     PrimaryActorTick.bCanEverTick = true;
 
-    // Componente de percepción y la configuración de vista
     EnemyPerceptionComp = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("EnemyPerceptionComp"));
     SightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("SightConfig"));
 
-    // qué tan lejos ve el enemigo
-    SightConfig->SightRadius = 800.f; // Distancia de visión
-    SightConfig->LoseSightRadius = 1000.f; // Distancia a la que te pierde de vista
-    SightConfig->PeripheralVisionAngleDegrees = 60.f; // Qué tan amplio es su cono de visión
-    SightConfig->SetMaxAge(5.0f); // Cuánto tiempo recuerda al objetivo después de perderlo
+    SightConfig->SightRadius = 800.f;
+    SightConfig->LoseSightRadius = 1000.f;
+    SightConfig->PeripheralVisionAngleDegrees = 60.f;
+    SightConfig->SetMaxAge(5.0f);
 
-    // qué cosas puede detectar (en este caso, todo)
     SightConfig->DetectionByAffiliation.bDetectEnemies = true;
     SightConfig->DetectionByAffiliation.bDetectFriendlies = true;
     SightConfig->DetectionByAffiliation.bDetectNeutrals = true;
 
-    // 4. Asignamos la vista al componente principal
     EnemyPerceptionComp->ConfigureSense(*SightConfig);
     EnemyPerceptionComp->SetDominantSense(UAISense_Sight::StaticClass());
 }
@@ -71,23 +66,20 @@ void AEnemyAIController::OnPossess(APawn* InPawn)
         }
     }
 }
+
 void AEnemyAIController::OnTargetDetected(AActor* Actor, FAIStimulus Stimulus)
 {
-    
     if (ACelestiaCharacter* Player = Cast<ACelestiaCharacter>(Actor))
     {
         if (AEnemyBase* ControlledEnemy = Cast<AEnemyBase>(GetPawn()))
         {
             if (UProgressionComponent* PlayerProg = Player->FindComponentByClass<UProgressionComponent>())
             {
-                
                 int32 PlayerLevel = PlayerProg->CurrentLevel;
                 int32 EnemyLvl = ControlledEnemy->EnemyLevel;
 
-                
                 if (PlayerLevel >= EnemyLvl + 2)
                 {
-                    
                     return;
                 }
             }
@@ -99,15 +91,12 @@ void AEnemyAIController::OnTargetDetected(AActor* Actor, FAIStimulus Stimulus)
             {
                 GetBlackboardComponent()->SetValueAsObject(FName("TargetActor"), Player);
             }
-            UE_LOG(LogTemp, Warning, TEXT("El enemigo vio al jugador"));
         }
         else
         {
-
             if (!bHasAggro && GetBlackboardComponent())
             {
                 GetBlackboardComponent()->ClearValue(FName("TargetActor"));
-                UE_LOG(LogTemp, Warning, TEXT("El enemigo perdio al jugador por distancia"));
             }
         }
     }
@@ -115,13 +104,9 @@ void AEnemyAIController::OnTargetDetected(AActor* Actor, FAIStimulus Stimulus)
 
 void AEnemyAIController::ReceiveDamageAggro(AActor* Attacker)
 {
-    // Si nos atacaron y tenemos Blackboard, fija el objetivo
     if (Attacker && GetBlackboardComponent())
     {
         bHasAggro = true;
         GetBlackboardComponent()->SetValueAsObject(FName("TargetActor"), Attacker);
-
-        UE_LOG(LogTemp, Warning, TEXT("Aggro activado por danio desde lejos"));
     }
-
 }

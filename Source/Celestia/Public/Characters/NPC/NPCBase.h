@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -10,6 +8,7 @@
 #include "NPCBase.generated.h"
 
 class UUINPCDialogue;
+class UQuestComponent;
 
 UCLASS()
 class CELESTIA_API ANPCBase : public ACharacter
@@ -23,7 +22,7 @@ public:
 	FName NPC_ID;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quests")
-	TArray<UQuestDataAsset*> AvailableQuests;
+	TArray<TObjectPtr<UQuestDataAsset>> AvailableQuests;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
 	TSubclassOf<UUINPCDialogue> DialogueWidgetClass;
@@ -40,7 +39,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "NPC Services")
 	bool bHasCrafting = false;
 
-	// --- FUNCIONES DE INTERACCIÓN ---
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interaction")
 	void Interact(AActor* Interactor);
 	virtual void Interact_Implementation(AActor* Interactor);
@@ -57,16 +55,16 @@ public:
 	virtual void OpenCrafting_Implementation(AActor* Interactor) {}
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
-	UBillboardComponent* QuestIndicatorIcon;
+	TObjectPtr<UBillboardComponent> QuestIndicatorIcon;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Quests | Icons")
-	UTexture2D* Icon_NewQuest;
+	TObjectPtr<UTexture2D> Icon_NewQuest;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Quests | Icons")
-	UTexture2D* Icon_TurnInQuest;
+	TObjectPtr<UTexture2D> Icon_TurnInQuest;
 
 	UFUNCTION(BlueprintCallable, Category = "Quests | UI")
-	void UpdateQuestIndicator(class UQuestComponent* PlayerQuestComp);
+	void UpdateQuestIndicator(UQuestComponent* PlayerQuestComp);
 
 protected:
 	virtual void BeginPlay() override;
