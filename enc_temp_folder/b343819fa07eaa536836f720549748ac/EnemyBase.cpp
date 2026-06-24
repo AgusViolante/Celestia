@@ -37,10 +37,10 @@ AEnemyBase::AEnemyBase()
 
 	OverheadWidgetComp = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidgetComp"));
 	OverheadWidgetComp->SetupAttachment(RootComponent);
-	OverheadWidgetComp->SetWidgetSpace(EWidgetSpace::Screen);
+	OverheadWidgetComp->SetWidgetSpace(EWidgetSpace::World);
 	OverheadWidgetComp->SetDrawAtDesiredSize(true);
 	OverheadWidgetComp->SetRelativeLocation(FVector(0.f, 0.f, 130.f));
-	OverheadWidgetComp->SetRelativeScale3D(FVector(1.f, 1.f, 1.f));
+	OverheadWidgetComp->SetRelativeScale3D(FVector(0.2f, 0.2f, 0.2f));
 
 	AIControllerClass = AEnemyAIController::StaticClass();
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
@@ -86,54 +86,34 @@ void AEnemyBase::Tick(float DeltaTime)
 
 	if (OverheadWidgetComp)
 	{
-		if (!bAlreadyDied && GetMesh() && GetMesh()->WasRecentlyRendered(0.2f))
+		if (GetMesh() && GetMesh()->WasRecentlyRendered(0.2f))
 		{
-			APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
-			if (PC && PC->PlayerCameraManager)
+			if (!OverheadWidgetComp->IsVisible())
 			{
-				FVector CameraLocation = PC->PlayerCameraManager->GetCameraLocation();
-				FVector EnemyLocation = GetActorLocation();
+				OverheadWidgetComp->SetVisibility(true);
+			}
 
-				float Distance = FVector::Dist(CameraLocation, EnemyLocation);
+			if (APlayerCameraManager* CameraManager = UGameplayStatics::GetPlayerCameraManager(this, 0))
+			{
+				FRotator CameraRot = CameraManager->GetCameraRotation();
+				CameraRot.Pitch = 0.f;
+				CameraRot.Roll = 0.f;
+				CameraRot.Yaw += 180.f;
 
-				float MaxVisibilityDistance = 1500.f;
-
-				if (Distance <= MaxVisibilityDistance)
-				{
-					FHitResult HitResult;
-					FCollisionQueryParams QueryParams;
-					QueryParams.AddIgnoredActor(this);
-					if (PC->GetPawn()) QueryParams.AddIgnoredActor(PC->GetPawn());
-
-					bool bBlocked = GetWorld()->LineTraceSingleByChannel(
-						HitResult,
-						CameraLocation,
-						OverheadWidgetComp->GetComponentLocation(),
-						ECC_Visibility,
-						QueryParams
-					);
-
-					if (bBlocked && HitResult.GetActor() && !HitResult.GetActor()->IsA(APawn::StaticClass()))
-					{
-						if (OverheadWidgetComp->IsVisible()) OverheadWidgetComp->SetVisibility(false);
-					}
-					else
-					{
-						if (!OverheadWidgetComp->IsVisible()) OverheadWidgetComp->SetVisibility(true);
-					}
-				}
-				else
-				{
-					if (OverheadWidgetComp->IsVisible()) OverheadWidgetComp->SetVisibility(false);
-				}
+				OverheadWidgetComp->SetWorldRotation(CameraRot);
 			}
 		}
 		else
 		{
-			if (OverheadWidgetComp->IsVisible()) OverheadWidgetComp->SetVisibility(false);
+			if (OverheadWidgetComp->IsVisible())
+			{
+				OverheadWidgetComp->SetVisibility(false);
+			}
 		}
 	}
-}void AEnemyBase::OnHealthChangedUpdateUI(UHealthComponent* InHealthComp, float NewHealth, float MaxHealth, float HealthDelta)
+}
+
+void AEnemyBase::OnHealthChangedUpdateUI(UHealthComponent* InHealthComp, float NewHealth, float MaxHealth, float HealthDelta)
 {
 	if (MaxHealth > 0.f && OverheadWidgetComp)
 	{

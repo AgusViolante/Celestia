@@ -13,6 +13,7 @@ class UAnimMontage;
 class ATargetPoint;
 class UNiagaraSystem;
 class UNiagaraComponent;
+class UWidgetComponent;
 class AEnemyBase;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FEnemyDeathSignature, AEnemyBase*, Enemy);
@@ -27,6 +28,8 @@ public:
 
 	AEnemyBase();
 
+	virtual void Tick(float DeltaTime) override;
+
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
@@ -34,6 +37,12 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UStatsComponent> StatsComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
+	TObjectPtr<UWidgetComponent> OverheadWidgetComp;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Enemy | Info")
+	FText EnemyName;
 
 	UPROPERTY(BlueprintAssignable, Category = "Enemy | Events")
 	FEnemyDeathSignature OnDeath;
@@ -88,6 +97,9 @@ protected:
 
 	UFUNCTION()
 	virtual void OnHealthComponentDeath(AActor* DeadOwner);
+
+	UFUNCTION()
+	void OnHealthChangedUpdateUI(UHealthComponent* InHealthComp, float NewHealth, float MaxHealth, float HealthDelta);
 
 	UFUNCTION()
 	void SpawnPotionDrop();

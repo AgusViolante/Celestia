@@ -69,7 +69,6 @@ void AMeleeEnemy::ApplyDamage()
 	if (!DamageTarget || bIsStunned) return;
 
 	Multicast_PlayAttackMontage();
-	ExecuteMeleeHit(); 
 }
 
 void AMeleeEnemy::Multicast_PlayAttackMontage_Implementation()

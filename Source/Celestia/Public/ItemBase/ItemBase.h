@@ -17,6 +17,8 @@ public:
 	AItemBase();
 
 protected:
+	virtual void BeginPlay() override;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item Data")
 	int32 Amount = 1;
 
@@ -29,8 +31,17 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	TObjectPtr<UStaticMeshComponent> CubeMesh;
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly, Category = "Item Data")
 	bool bIsPickedUp = false;
+
+	UFUNCTION()
+	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_ToggleHighlight(AActor* PlayerActor, bool bTurnOn);
 
 public:
 	virtual void Interact_Implementation(AActor* Interactor) override;
