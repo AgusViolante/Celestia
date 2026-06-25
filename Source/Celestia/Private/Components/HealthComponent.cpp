@@ -157,8 +157,7 @@ void UHealthComponent::InitializeAfterSpawn(bool bEnableAutoRegen, float InRegen
     }
 }
 
-bool UHealthComponent::IsRegenTimerActive() const
-{
+bool UHealthComponent::IsRegenTimerActive() const{
     if (!GetWorld()) return false;
     return GetWorld()->GetTimerManager().IsTimerActive(RegenTimerHandle);
 }
