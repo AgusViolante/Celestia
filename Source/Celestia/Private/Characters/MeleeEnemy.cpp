@@ -3,13 +3,14 @@
 #include "Components/HealthComponent.h"
 #include "Components/StatsComponent.h"
 #include "TimerManager.h"
+#include "AIController.h"
 #include "../CelestiaCharacter.h" 
 
 AMeleeEnemy::AMeleeEnemy()
 {
 	DamageSphere = CreateDefaultSubobject<USphereComponent>(TEXT("DamageSphere"));
 	DamageSphere->SetupAttachment(RootComponent);
-	DamageSphere->SetSphereRadius(75.f);
+	DamageSphere->SetSphereRadius(120.f);
 	DamageSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	DamageSphere->SetCollisionResponseToAllChannels(ECR_Ignore);
 	DamageSphere->SetCollisionProfileName(TEXT("Trigger"));
@@ -54,7 +55,16 @@ void AMeleeEnemy::StartDamage(AActor* TargetActor)
 	if (!TargetActor || (DamageTarget == TargetActor && GetWorldTimerManager().IsTimerActive(DamageTimerHandle))) return;
 
 	DamageTarget = TargetActor;
+
+	if (AAIController* AIC = Cast<AAIController>(GetController()))
+	{
+		AIC->StopMovement();
+	}
+
 	float Interval = FMath::Max(0.01f, DamageInterval);
+
+	ApplyDamage();
+
 	GetWorldTimerManager().SetTimer(DamageTimerHandle, this, &AMeleeEnemy::ApplyDamage, Interval, true, Interval);
 }
 
@@ -69,7 +79,7 @@ void AMeleeEnemy::ApplyDamage()
 	if (!DamageTarget || bIsStunned) return;
 
 	Multicast_PlayAttackMontage();
-	ExecuteMeleeHit(); 
+	ExecuteMeleeHit();
 }
 
 void AMeleeEnemy::Multicast_PlayAttackMontage_Implementation()
