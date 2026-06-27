@@ -112,7 +112,7 @@ protected:
 	bool bIsStunned = false;
 
 	UFUNCTION()
-	void OnRep_IsStunned();
+	virtual void OnRep_IsStunned();
 
 	UPROPERTY(EditAnywhere, Category = "Combat | Stun")
 	TObjectPtr<UNiagaraSystem> StunVFX;
@@ -125,4 +125,5 @@ protected:
 
 	UPROPERTY()
 	TObjectPtr<AActor> LastAttacker;
+
 };

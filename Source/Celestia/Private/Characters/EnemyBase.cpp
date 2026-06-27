@@ -308,6 +308,8 @@ void AEnemyBase::InitializeEnemyStats()
 {
 	if (!StatsComponent) return;
 
+	StatsComponent->CharacterLevel = EnemyLevel;
+
 	float BaseStr = 1.0f, BaseDex = 1.0f, BaseInt = 1.0f, BaseWis = 1.0f, BaseEnd = 1.0f;
 	float StrGrowth = 0.5f, DexGrowth = 0.5f, IntGrowth = 0.5f, WisGrowth = 0.5f, EndGrowth = 0.5f;
 
@@ -315,7 +317,7 @@ void AEnemyBase::InitializeEnemyStats()
 	{
 	case EEnemyClassType::Melee:
 		BaseStr = 2.0f; BaseEnd = 4.0f; BaseDex = 1.0f;
-		StrGrowth = 1.0f; EndGrowth = 1.5f; DexGrowth = 0.5f;
+		StrGrowth = 1.2f; EndGrowth = 1.0f; DexGrowth = 0.5f;
 		break;
 	case EEnemyClassType::Ranged:
 		BaseDex = 3.0f; BaseInt = 2.0f; BaseEnd = 2.0f;
@@ -326,8 +328,8 @@ void AEnemyBase::InitializeEnemyStats()
 		StrGrowth = 2.0f; EndGrowth = 5.0f; DexGrowth = 1.0f; IntGrowth = 1.0f; WisGrowth = 1.0f;
 		break;
 	case EEnemyClassType::Tank:
-		BaseStr = 3.0f; BaseEnd = 8.0f; BaseDex = 1.0f; BaseInt = 1.0f; BaseWis = 2.0f;
-		StrGrowth = 1.5f; EndGrowth = 2.5f; DexGrowth = 0.2f; IntGrowth = 0.2f; WisGrowth = 0.5f;
+		BaseStr = 1.5f; BaseEnd = 8.0f; BaseDex = 1.0f; BaseInt = 1.0f; BaseWis = 2.0f;
+		StrGrowth = 0.5f; EndGrowth = 3.5f; DexGrowth = 0.2f; IntGrowth = 0.2f; WisGrowth = 0.5f;
 		break;
 	}
 

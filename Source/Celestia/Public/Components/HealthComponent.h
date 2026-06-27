@@ -5,6 +5,8 @@
 #include "Interfaces/DeathInterface.h"
 #include "HealthComponent.generated.h"
 
+class AActor;
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDeathSignature, AActor*, DeadOwner);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FOnHealthChangedSignature, UHealthComponent*, HealthComp, float, Health, float, MaxHealth, float, HealthDelta);
 

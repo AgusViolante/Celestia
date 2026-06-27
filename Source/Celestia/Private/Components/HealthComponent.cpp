@@ -53,8 +53,10 @@ void UHealthComponent::OnRep_Health(float OldHealth)
     if (IsDead() && !bHasDied)
     {
         bHasDied = true;
-        AActor* Owner = GetOwner();
-        OnDeath.Broadcast(Owner);
+        if (AActor* Owner = GetOwner())
+        {
+            OnDeath.Broadcast(Owner);
+        }
     }
 }
 
@@ -66,10 +68,12 @@ void UHealthComponent::TakeDamage(float Amount, bool bIsCritical)
 
     if (bIsCritical)
     {
-        AActor* Owner = GetOwner();
-        if (Owner && Owner->Implements<UStunnableInterface>())
+        if (AActor* Owner = GetOwner())
         {
-            IStunnableInterface::Execute_ApplyStun(Owner, 2.0f);
+            if (Owner->Implements<UStunnableInterface>())
+            {
+                IStunnableInterface::Execute_ApplyStun(Owner, 2.0f);
+            }
         }
     }
 
@@ -85,8 +89,10 @@ void UHealthComponent::TakeDamage(float Amount, bool bIsCritical)
     if (IsDead() && !bHasDied)
     {
         bHasDied = true;
-        AActor* Owner = GetOwner();
-        OnDeath.Broadcast(Owner);
+        if (AActor* Owner = GetOwner())
+        {
+            OnDeath.Broadcast(Owner);
+        }
     }
 }
 
@@ -104,12 +110,11 @@ void UHealthComponent::UpdateMaxHealth(float NewMaxHealth)
 {
     if (!GetOwner() || !GetOwner()->HasAuthority()) return;
 
-    float HealthDifference = NewMaxHealth - MaxHealth;
     MaxHealth = NewMaxHealth;
-    Health += HealthDifference;
-    Health = FMath::Clamp(Health, 0.f, MaxHealth);
+    float HealthDelta = MaxHealth - Health;
+    Health = MaxHealth;
 
-    OnHealthChanged.Broadcast(this, Health, MaxHealth, HealthDifference);
+    OnHealthChanged.Broadcast(this, Health, MaxHealth, HealthDelta);
 }
 
 void UHealthComponent::RegenTick()
@@ -147,6 +152,7 @@ void UHealthComponent::InitializeAfterSpawn(bool bEnableAutoRegen, float InRegen
     if (InRegenTickInterval >= 0.f) RegenTickInterval = InRegenTickInterval;
 
     bAutoRegen = bEnableAutoRegen;
+
     if (W)
     {
         W->GetTimerManager().ClearTimer(RegenTimerHandle);
@@ -157,7 +163,8 @@ void UHealthComponent::InitializeAfterSpawn(bool bEnableAutoRegen, float InRegen
     }
 }
 
-bool UHealthComponent::IsRegenTimerActive() const{
+bool UHealthComponent::IsRegenTimerActive() const
+{
     if (!GetWorld()) return false;
     return GetWorld()->GetTimerManager().IsTimerActive(RegenTimerHandle);
 }

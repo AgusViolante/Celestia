@@ -12,6 +12,11 @@ class CELESTIA_API ATankEnemy : public AMeleeEnemy
 public:
 	ATankEnemy();
 
+	virtual void OnRep_IsStunned() override;
+
+
 protected:
 	virtual void BeginPlay() override;
+
+	
 };

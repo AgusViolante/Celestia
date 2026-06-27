@@ -28,3 +28,20 @@ void ATankEnemy::BeginPlay()
 	Super::BeginPlay();
 	DamageInterval = 2.5f;
 }
+
+void ATankEnemy::OnRep_IsStunned()
+{
+	Super::OnRep_IsStunned();
+
+	if (DamageSphere)
+	{
+		if (bIsStunned)
+		{
+			DamageSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+		else
+		{
+			DamageSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		}
+	}
+}
